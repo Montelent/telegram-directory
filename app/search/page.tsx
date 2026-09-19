@@ -82,7 +82,6 @@ function SearchContent() {
       <div className="container mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold mb-6">Search Groups & Channels</h1>
 
-        {/* Search form */}
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mb-8">
           <input
             type="search"
@@ -100,7 +99,6 @@ function SearchContent() {
         </form>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar filters */}
           <aside className="lg:w-56 shrink-0 space-y-6">
             <div>
               <h3 className="font-semibold text-sm text-slate-700 mb-2">Type</h3>
@@ -110,9 +108,7 @@ function SearchContent() {
                     key={t || 'all'}
                     onClick={() => setType(t)}
                     className={`block w-full text-left px-3 py-1.5 rounded text-sm ${
-                      type === t
-                        ? 'bg-blue-100 text-blue-800 font-medium'
-                        : 'text-slate-600 hover:bg-slate-100'
+                      type === t ? 'bg-blue-100 text-blue-800 font-medium' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     {t === '' ? 'All' : t === 'GROUP' ? 'Groups' : 'Channels'}
@@ -127,9 +123,7 @@ function SearchContent() {
                 <button
                   onClick={() => setCategory('')}
                   className={`block w-full text-left px-3 py-1.5 rounded text-sm ${
-                    category === ''
-                      ? 'bg-blue-100 text-blue-800 font-medium'
-                      : 'text-slate-600 hover:bg-slate-100'
+                    category === '' ? 'bg-blue-100 text-blue-800 font-medium' : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   All categories
@@ -139,22 +133,17 @@ function SearchContent() {
                     key={cat.id}
                     onClick={() => setCategory(cat.slug)}
                     className={`block w-full text-left px-3 py-1.5 rounded text-sm ${
-                      category === cat.slug
-                        ? 'bg-blue-100 text-blue-800 font-medium'
-                        : 'text-slate-600 hover:bg-slate-100'
+                      category === cat.slug ? 'bg-blue-100 text-blue-800 font-medium' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     {cat.name}
-                    {cat._count && (
-                      <span className="text-slate-400 ml-1">({cat._count.entities})</span>
-                    )}
+                    {cat._count && <span className="text-slate-400 ml-1">({cat._count.entities})</span>}
                   </button>
                 ))}
               </div>
             </div>
           </aside>
 
-          {/* Results */}
           <div className="flex-1">
             {loading ? (
               <p className="text-slate-500">Loading...</p>
@@ -162,9 +151,7 @@ function SearchContent() {
               <div className="bg-white rounded-xl border p-10 text-center text-slate-500">
                 No groups or channels found.
                 <div className="mt-4">
-                  <Link href="/submit" className="text-blue-600 hover:underline">
-                    Submit one →
-                  </Link>
+                  <Link href="/submit" className="text-blue-600 hover:underline">Submit one →</Link>
                 </div>
               </div>
             ) : (
@@ -174,51 +161,62 @@ function SearchContent() {
                 </p>
                 <div className="space-y-3">
                   {entities.map((entity) => (
-                    <Link
+                    <div
                       key={entity.id}
-                      href={entity.username ? `https://t.me/${entity.username}` : '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block bg-white rounded-xl border p-5 hover:border-blue-300 hover:shadow-sm transition"
+                      className="bg-white rounded-xl border p-5 hover:border-blue-300 hover:shadow-sm transition"
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-slate-900">{entity.title}</h3>
-                            {entity.isVerified && (
-                              <span className="text-blue-500 text-xs">✓</span>
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <Link
+                            href={entity.username ? `/g/${entity.username}` : '#'}
+                            className="block"
+                          >
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h3 className="font-semibold text-slate-900 hover:text-blue-600">{entity.title}</h3>
+                              {entity.isVerified && <span className="text-blue-500 text-xs">✓</span>}
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                entity.type === 'CHANNEL' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                              }`}>{entity.type}</span>
+                            </div>
+                            {entity.username && (
+                              <p className="text-sm text-blue-600">@{entity.username}</p>
                             )}
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded-full ${
-                                entity.type === 'CHANNEL'
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : 'bg-blue-100 text-blue-700'
-                              }`}
-                            >
-                              {entity.type}
-                            </span>
-                          </div>
+                            {entity.description && (
+                              <p className="text-sm text-slate-600 mt-1 line-clamp-2">{entity.description}</p>
+                            )}
+                            <div className="flex gap-3 mt-2 text-xs text-slate-400">
+                              {entity.category && <span>{entity.category.name}</span>}
+                              {entity.memberCount != null && (
+                                <span>{entity.memberCount.toLocaleString()} members</span>
+                              )}
+                            </div>
+                          </Link>
+                        </div>
+                        <div className="flex flex-col gap-2 shrink-0">
                           {entity.username && (
-                            <p className="text-sm text-blue-600">@{entity.username}</p>
+                            <a
+                              href={`https://t.me/${entity.username}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center rounded-lg bg-[#0088cc] px-4 py-2 text-sm text-white font-medium hover:bg-[#0077b5]"
+                            >
+                              Open in Telegram
+                            </a>
                           )}
-                          {entity.description && (
-                            <p className="text-sm text-slate-600 mt-1 line-clamp-2">
-                              {entity.description}
-                            </p>
+                          {entity.username && (
+                            <Link
+                              href={`/g/${entity.username}`}
+                              className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                            >
+                              View details & reviews
+                            </Link>
                           )}
-                          <div className="flex gap-3 mt-2 text-xs text-slate-400">
-                            {entity.category && <span>{entity.category.name}</span>}
-                            {entity.memberCount != null && (
-                              <span>{entity.memberCount.toLocaleString()} members</span>
-                            )}
-                          </div>
                         </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
 
-                {/* Simple pagination */}
                 {pagination.totalPages > 1 && (
                   <div className="flex justify-center gap-2 mt-8">
                     <button
