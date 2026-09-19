@@ -19,6 +19,7 @@ export default function AdminLoginPage() {
     const result = await signIn('credentials', {
       email,
       password,
+      type: 'admin',
       redirect: false,
     })
 
@@ -33,7 +34,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-md p-8">
         <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
 
@@ -72,7 +73,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="mt-6 text-xs text-center text-slate-500">
-          Use the ADMIN_EMAIL / ADMIN_PASSWORD from your .env file for the first login.
+          Use ADMIN_EMAIL / ADMIN_PASSWORD from your environment variables.
         </p>
       </div>
     </div>

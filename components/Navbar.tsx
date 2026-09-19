@@ -3,13 +3,17 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { data: session, status } = useSession()
 
-  // Hide navbar on admin pages
   if (pathname?.startsWith('/admin')) return null
+
+  const isUser = session && (session.user as any)?.role === 'user'
 
   const links = [
     { href: '/search', label: 'Search' },
@@ -23,7 +27,6 @@ export default function Navbar() {
           Telegram Directory
         </Link>
 
-        {/* Desktop */}
         <nav className="hidden sm:flex items-center gap-6 text-sm">
           {links.map((l) => (
             <Link
@@ -36,15 +39,69 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
-          <Link
-            href="/admin"
-            className="text-slate-400 hover:text-slate-600 text-xs"
-          >
-            Admin
-          </Link>
+
+          {status === 'loading' ? null : isUser ? (
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-1 text-slate-700 font-medium"
+              >
+                {session?.user?.name || session?.user?.email?.split('@')[0] || 'Account'}
+                <span className="text-xs">▼</span>
+              </button>
+              {userMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50 py-1">
+                    <Link
+                      href="/account"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      Account
+                    </Link>
+                    <Link
+                      href="/account/submissions"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      My Submissions
+                    </Link>
+                    <Link
+                      href="/account/settings"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      Settings
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false)
+                        signOut({ callbackUrl: '/' })
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-slate-50"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              <Link href="/login" className="text-slate-600 hover:text-blue-600">
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-lg bg-blue-600 px-3 py-1.5 text-white font-medium hover:bg-blue-700"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
 
-        {/* Mobile toggle */}
         <button
           className="sm:hidden p-2 text-slate-600"
           onClick={() => setOpen(!open)}
@@ -60,7 +117,6 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile menu */}
       {open && (
         <div className="sm:hidden border-t bg-white">
           <nav className="container mx-auto px-4 py-3 flex flex-col gap-2">
@@ -76,13 +132,27 @@ export default function Navbar() {
                 {l.label}
               </Link>
             ))}
-            <Link
-              href="/admin"
-              onClick={() => setOpen(false)}
-              className="py-2 text-sm text-slate-400"
-            >
-              Admin
-            </Link>
+            {isUser ? (
+              <>
+                <Link href="/account" onClick={() => setOpen(false)} className="py-2 text-sm text-slate-600">Account</Link>
+                <Link href="/account/submissions" onClick={() => setOpen(false)} className="py-2 text-sm text-slate-600">My Submissions</Link>
+                <Link href="/account/settings" onClick={() => setOpen(false)} className="py-2 text-sm text-slate-600">Settings</Link>
+                <button
+                  onClick={() => {
+                    setOpen(false)
+                    signOut({ callbackUrl: '/' })
+                  }}
+                  className="py-2 text-sm text-red-600 text-left"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setOpen(false)} className="py-2 text-sm text-slate-600">Log in</Link>
+                <Link href="/signup" onClick={() => setOpen(false)} className="py-2 text-sm text-blue-600 font-medium">Sign up</Link>
+              </>
+            )}
           </nav>
         </div>
       )}
