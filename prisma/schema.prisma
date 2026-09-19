@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EntityType {
+  GROUP
+  CHANNEL
+}
+
+enum EntityStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  entities    Entity[]
+
+  @@map("categories")
+}
+
+model Entity {
+  id            String       @id @default(cuid())
+  username      String?      // @username (public)
+  title         String
+  description   String?
+  type          EntityType
+  status        EntityStatus @default(PENDING)
+  memberCount   Int?
+  language      String?
+  country       String?
+  inviteLink    String?
+  photoUrl      String?
+  isVerified    Boolean      @default(false)
+  isScam        Boolean      @default(false)
+  lastCheckedAt DateTime?
+  source        String?      // "submission" | "tgstat" | "crawler" | "manual"
+  externalId    String?      // e.g. TGStat id
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  categoryId    String?
+  category      Category?    @relation(fields: [categoryId], references: [id])
+
+  submissions   Submission[]
+
+  @@unique([username])
+  @@index([status])
+  @@index([type])
+  @@index([categoryId])
+  @@map("entities")
+}
+
+model Submission {
+  id          String       @id @default(cuid())
+  username    String
+  title       String?
+  description String?
+  type        EntityType
+  status      EntityStatus @default(PENDING)
+  submittedBy String?      // email or user id if we add users later
+  notes       String?      // admin notes
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  entityId    String?
+  entity      Entity?      @relation(fields: [entityId], references: [id])
+
+  @@map("submissions")
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String?  // hashed, for credentials provider
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admin_users")
+}
+
+model ApiIntegration {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "TGStat"
+  key         String   // encrypted or plain for now
+  isActive    Boolean  @default(true)
+  lastUsedAt  DateTime?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("api_integrations")
+}
