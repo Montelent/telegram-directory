@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -11,18 +13,18 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <a
+            <Link
               href="/search"
               className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700 transition"
             >
               Search Groups & Channels
-            </a>
-            <a
+            </Link>
+            <Link
               href="/submit"
               className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-slate-700 font-medium hover:bg-slate-50 transition"
             >
               Submit a Group
-            </a>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
@@ -41,7 +43,7 @@ export default function HomePage() {
           </div>
 
           <p className="mt-12 text-sm text-slate-500">
-            Admin panel → <a href="/admin" className="text-blue-600 hover:underline">/admin</a>
+            Admin panel → <Link href="/admin" className="text-blue-600 hover:underline">/admin</Link>
           </p>
         </div>
       </div>
