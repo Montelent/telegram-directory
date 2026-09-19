@@ -70,7 +70,7 @@ export default async function HomePage() {
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/search?category=${cat.slug}`}
+                href={`/category/${cat.slug}`}
                 className="bg-white rounded-xl border p-5 hover:border-blue-300 hover:shadow-sm transition text-left"
               >
                 <div className="text-2xl mb-2">{cat.icon || '📁'}</div>
@@ -122,7 +122,15 @@ export default async function HomePage() {
                   <p className="text-sm text-slate-600 mt-1 line-clamp-2">{entity.description}</p>
                 )}
                 <div className="flex gap-3 mt-2 text-xs text-slate-400">
-                  {entity.category && <span>{entity.category.name}</span>}
+                  {entity.category && (
+                    <Link
+                      href={`/category/${entity.category.slug}`}
+                      className="hover:text-blue-600"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {entity.category.name}
+                    </Link>
+                  )}
                   {entity.memberCount != null && (
                     <span>{entity.memberCount.toLocaleString()} members</span>
                   )}
@@ -146,7 +154,7 @@ export default async function HomePage() {
       )}
 
       <footer className="border-t py-8 text-center text-sm text-slate-500">
-        <Link href="/admin" className="text-blue-600 hover:underline">Admin panel</Link>
+        Built with Next.js · <Link href="/admin" className="text-blue-600 hover:underline">Admin</Link>
       </footer>
     </main>
   )
