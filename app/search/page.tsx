@@ -19,6 +19,7 @@ interface Entity {
   type: 'GROUP' | 'CHANNEL'
   memberCount: number | null
   isVerified: boolean
+  photoUrl?: string | null
   category: { name: string; slug: string } | null
 }
 
@@ -75,6 +76,10 @@ function SearchContent() {
     if (category) params.set('category', category)
     router.push(`/search?${params.toString()}`)
     fetchData(1)
+  }
+
+  function detailHref(entity: Entity) {
+    return entity.username ? `/g/${entity.username}` : `/g/${entity.id}`
   }
 
   return (
@@ -161,59 +166,44 @@ function SearchContent() {
                 </p>
                 <div className="space-y-3">
                   {entities.map((entity) => (
-                    <div
+                    <Link
                       key={entity.id}
-                      className="bg-white rounded-xl border p-5 hover:border-blue-300 hover:shadow-sm transition"
+                      href={detailHref(entity)}
+                      className="block bg-white rounded-xl border p-5 hover:border-blue-300 hover:shadow-sm transition"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <Link
-                            href={entity.username ? `/g/${entity.username}` : '#'}
-                            className="block"
-                          >
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <h3 className="font-semibold text-slate-900 hover:text-blue-600">{entity.title}</h3>
-                              {entity.isVerified && <span className="text-blue-500 text-xs">✓</span>}
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                entity.type === 'CHANNEL' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                              }`}>{entity.type}</span>
-                            </div>
-                            {entity.username && (
-                              <p className="text-sm text-blue-600">@{entity.username}</p>
-                            )}
-                            {entity.description && (
-                              <p className="text-sm text-slate-600 mt-1 line-clamp-2">{entity.description}</p>
-                            )}
-                            <div className="flex gap-3 mt-2 text-xs text-slate-400">
-                              {entity.category && <span>{entity.category.name}</span>}
-                              {entity.memberCount != null && (
-                                <span>{entity.memberCount.toLocaleString()} members</span>
-                              )}
-                            </div>
-                          </Link>
-                        </div>
-                        <div className="flex flex-col gap-2 shrink-0">
+                      <div className="flex gap-4">
+                        {entity.photoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={entity.photoUrl} alt="" className="w-14 h-14 rounded-full object-cover border shrink-0" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-xl">
+                            {entity.type === 'CHANNEL' ? '📢' : '👥'}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="font-semibold text-slate-900">{entity.title}</h3>
+                            {entity.isVerified && <span className="text-blue-500 text-xs">✓</span>}
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              entity.type === 'CHANNEL' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                            }`}>{entity.type}</span>
+                          </div>
                           {entity.username && (
-                            <a
-                              href={`https://t.me/${entity.username}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center rounded-lg bg-[#0088cc] px-4 py-2 text-sm text-white font-medium hover:bg-[#0077b5]"
-                            >
-                              Open in Telegram
-                            </a>
+                            <p className="text-sm text-blue-600">@{entity.username}</p>
                           )}
-                          {entity.username && (
-                            <Link
-                              href={`/g/${entity.username}`}
-                              className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                            >
-                              View details & reviews
-                            </Link>
+                          {entity.description && (
+                            <p className="text-sm text-slate-600 mt-1 line-clamp-2">{entity.description}</p>
                           )}
+                          <div className="flex gap-3 mt-2 text-xs text-slate-400">
+                            {entity.category && <span>{entity.category.name}</span>}
+                            {entity.memberCount != null && (
+                              <span>{entity.memberCount.toLocaleString()} members</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-blue-600 font-medium mt-2">View details & open Telegram →</p>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
 
