@@ -6,18 +6,13 @@
   --oxblood: #4a0e0e;
   --oxblood-deep: #2d0808;
   --crimson: #8b1a1a;
-  --red-mid: #a miller-invalid;
+  --red-mid: #b91c1c;
   --red-bright: #c41e3a;
   --red-soft: #e85a5a;
   --red-pale: #f8e8e8;
   --red-wash: #faf4f4;
   --ink: #1a1212;
   --muted: #6b5555;
-}
-
-/* fix typo */
-:root {
-  --red-mid: #b91c1c;
 }
 
 body {
