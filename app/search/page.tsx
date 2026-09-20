@@ -54,9 +54,7 @@ function SearchContent() {
         setEntities(data.data)
         setPagination(data.pagination)
       }
-      if (catsRes.ok) {
-        setCategories(await catsRes.json())
-      }
+      if (catsRes.ok) setCategories(await catsRes.json())
     } catch (err) {
       console.error(err)
     } finally {
@@ -78,10 +76,6 @@ function SearchContent() {
     fetchData(1)
   }
 
-  function detailHref(entity: Entity) {
-    return entity.username ? `/g/${entity.username}` : `/g/${entity.id}`
-  }
-
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="container mx-auto px-4 py-10">
@@ -95,10 +89,7 @@ function SearchContent() {
             placeholder="Search by name, keyword, or @username..."
             className="flex-1 rounded-lg border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button
-            type="submit"
-            className="rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700"
-          >
+          <button type="submit" className="rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700">
             Search
           </button>
         </form>
@@ -121,7 +112,6 @@ function SearchContent() {
                 ))}
               </div>
             </div>
-
             <div>
               <h3 className="font-semibold text-sm text-slate-700 mb-2">Category</h3>
               <div className="space-y-1 max-h-80 overflow-y-auto">
@@ -142,7 +132,6 @@ function SearchContent() {
                     }`}
                   >
                     {cat.name}
-                    {cat._count && <span className="text-slate-400 ml-1">({cat._count.entities})</span>}
                   </button>
                 ))}
               </div>
@@ -155,79 +144,38 @@ function SearchContent() {
             ) : entities.length === 0 ? (
               <div className="bg-white rounded-xl border p-10 text-center text-slate-500">
                 No groups or channels found.
-                <div className="mt-4">
-                  <Link href="/submit" className="text-blue-600 hover:underline">Submit one →</Link>
-                </div>
               </div>
             ) : (
               <>
-                <p className="text-sm text-slate-500 mb-4">
-                  {pagination.total} result{pagination.total !== 1 ? 's' : ''}
-                </p>
+                <p className="text-sm text-slate-500 mb-4">{pagination.total} results</p>
                 <div className="space-y-3">
                   {entities.map((entity) => (
                     <Link
                       key={entity.id}
-                      href={detailHref(entity)}
+                      href={`/entity/${entity.id}`}
                       className="block bg-white rounded-xl border p-5 hover:border-blue-300 hover:shadow-sm transition"
                     >
                       <div className="flex gap-4">
-                        {entity.photoUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={entity.photoUrl} alt="" className="w-14 h-14 rounded-full object-cover border shrink-0" />
-                        ) : (
-                          <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-xl">
-                            {entity.type === 'CHANNEL' ? '📢' : '👥'}
-                          </div>
-                        )}
+                        <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-xl">
+                          {entity.type === 'CHANNEL' ? '📢' : '👥'}
+                        </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h3 className="font-semibold text-slate-900">{entity.title}</h3>
-                            {entity.isVerified && <span className="text-blue-500 text-xs">✓</span>}
                             <span className={`text-xs px-2 py-0.5 rounded-full ${
                               entity.type === 'CHANNEL' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                             }`}>{entity.type}</span>
                           </div>
-                          {entity.username && (
-                            <p className="text-sm text-blue-600">@{entity.username}</p>
-                          )}
+                          {entity.username && <p className="text-sm text-blue-600">@{entity.username}</p>}
                           {entity.description && (
                             <p className="text-sm text-slate-600 mt-1 line-clamp-2">{entity.description}</p>
                           )}
-                          <div className="flex gap-3 mt-2 text-xs text-slate-400">
-                            {entity.category && <span>{entity.category.name}</span>}
-                            {entity.memberCount != null && (
-                              <span>{entity.memberCount.toLocaleString()} members</span>
-                            )}
-                          </div>
                           <p className="text-sm text-blue-600 font-medium mt-2">View details & open Telegram →</p>
                         </div>
                       </div>
                     </Link>
                   ))}
                 </div>
-
-                {pagination.totalPages > 1 && (
-                  <div className="flex justify-center gap-2 mt-8">
-                    <button
-                      disabled={pagination.page <= 1}
-                      onClick={() => fetchData(pagination.page - 1)}
-                      className="px-4 py-2 rounded border text-sm disabled:opacity-40"
-                    >
-                      Previous
-                    </button>
-                    <span className="px-4 py-2 text-sm text-slate-600">
-                      Page {pagination.page} of {pagination.totalPages}
-                    </span>
-                    <button
-                      disabled={pagination.page >= pagination.totalPages}
-                      onClick={() => fetchData(pagination.page + 1)}
-                      className="px-4 py-2 rounded border text-sm disabled:opacity-40"
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
               </>
             )}
           </div>
