@@ -32,9 +32,7 @@ model Category {
   icon        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   entities    Entity[]
-
   @@map("categories")
 }
 
@@ -57,14 +55,11 @@ model Entity {
   externalId    String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-
   categoryId    String?
   category      Category?    @relation(fields: [categoryId], references: [id])
-
   submissions   Submission[]
   reviews       Review[]
   userMedia     UserMedia[]
-
   @@unique([username])
   @@index([status])
   @@index([type])
@@ -85,10 +80,8 @@ model Submission {
   notes       String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-
   entityId    String?
   entity      Entity?      @relation(fields: [entityId], references: [id])
-
   @@map("submissions")
 }
 
@@ -101,30 +94,26 @@ model User {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  reviews     Review[]
-  submissions Submission[]
-  media       UserMedia[]
-  tickets     Ticket[]
-
+  reviews      Review[]
+  submissions  Submission[]
+  media        UserMedia[]
+  tickets      Ticket[]
   @@map("users")
 }
 
 model UserMedia {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   title     String?
   username  String
-  type      EntityType @default(CHANNEL)
+  type      EntityType   @default(CHANNEL)
   status    EntityStatus @default(PENDING)
   notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId   String
-  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entityId String?
-  entity   Entity? @relation(fields: [entityId], references: [id])
-
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityId  String?
+  entity    Entity?      @relation(fields: [entityId], references: [id])
   @@index([userId])
   @@map("user_media")
 }
@@ -135,25 +124,22 @@ model Review {
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entityId String
-  entity   Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
-
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityId  String
+  entity    Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
   @@unique([userId, entityId])
   @@index([entityId])
   @@map("reviews")
 }
 
 model BlogCategory {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   posts     BlogPost[]
-
   @@map("blog_categories")
 }
 
@@ -162,19 +148,20 @@ model BlogPost {
   title           String
   slug            String   @unique
   excerpt         String?
-  content         String   // HTML from TinyMCE
+  content         String
   coverImage      String?
   published       Boolean  @default(false)
   publishedAt     DateTime?
   seoTitle        String?
   seoDescription  String?
-  seoJsonLd       String?  // auto-generated JSON-LD
+  seoJsonLd       String?
+  focusKeyword    String?
+  canonicalUrl    String?
+  robots          String?  @default("index,follow")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  categoryId String?
-  category   BlogCategory? @relation(fields: [categoryId], references: [id])
-
+  categoryId      String?
+  category        BlogCategory? @relation(fields: [categoryId], references: [id])
   @@index([published])
   @@map("blog_posts")
 }
@@ -187,11 +174,17 @@ model Ticket {
   adminNote String?
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
-
-  userId String?
-  user   User?  @relation(fields: [userId], references: [id])
-
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id])
   @@map("tickets")
+}
+
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @default("")
+  updatedAt DateTime @updatedAt
+  @@map("site_settings")
 }
 
 model AdminUser {
@@ -202,7 +195,6 @@ model AdminUser {
   role      String   @default("admin")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@map("admin_users")
 }
 
@@ -215,6 +207,5 @@ model ApiIntegration {
   metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   @@map("api_integrations")
 }

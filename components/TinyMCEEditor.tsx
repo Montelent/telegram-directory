@@ -1,69 +1,93 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-declare global {
-  interface Window {
-    tinymce?: any
-  }
-}
-
+/**
+ * Free TinyMCE via jsDelivr (no API key).
+ * Alternative: set NEXT_PUBLIC_TINYMCE_API_KEY for Tiny Cloud.
+ */
 export default function TinyMCEEditor({
   value,
   onChange,
-  height = 400,
+  height = 420,
 }: {
   value: string
   onChange: (html: string) => void
   height?: number
 }) {
-  const idRef = useRef(`tinymce-${Math.random().toString(36).slice(2)}`)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const editorId = useRef(`editor-${Math.random().toString(36).slice(2, 9)}`).current
+  const [ready, setReady] = useState(false)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
 
   useEffect(() => {
-    const id = idRef.current
+    let cancelled = false
 
-    function init() {
-      if (!window.tinymce) return
-      window.tinymce.init({
-        selector: `#${id}`,
+    async function load() {
+      const w = window as any
+      if (!w.tinymce) {
+        await new Promise<void>((resolve, reject) => {
+          const s = document.createElement('script')
+          // Community build – no API key required
+          s.src = 'https://cdn.jsdelivr.net/npm/tinymce@6.8.5/tinymce.min.js'
+          s.onload = () => resolve()
+          s.onerror = () => reject(new Error('Failed to load TinyMCE'))
+          document.head.appendChild(s)
+        })
+      }
+      if (cancelled) return
+
+      const tinymce = (window as any).tinymce
+      tinymce.init({
+        selector: `#${editorId}`,
         height,
-        menubar: false,
-        plugins: 'lists link image code table autolink',
+        menubar: 'file edit view insert format tools',
+        plugins:
+          'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
         toolbar:
-          'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image | code',
-        content_style: 'body { font-family: Inter, system-ui, sans-serif; font-size: 15px; }',
+          'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | removeformat code fullscreen',
+        branding: false,
+        promotion: false,
+        convert_urls: false,
+        content_style:
+          'body { font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.6; }',
         setup(editor: any) {
-          editor.on('change keyup', () => {
+          editor.on('init', () => {
+            if (value) editor.setContent(value)
+            setReady(true)
+          })
+          editor.on('change keyup undo redo', () => {
             onChangeRef.current(editor.getContent())
           })
         },
       })
     }
 
-    if (window.tinymce) {
-      init()
-    } else {
-      const script = document.createElement('script')
-      script.src = 'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js'
-      script.referrerPolicy = 'origin'
-      script.onload = init
-      document.body.appendChild(script)
-    }
+    load().catch(console.error)
 
     return () => {
-      if (window.tinymce) {
-        window.tinymce.get(id)?.remove()
+      cancelled = true
+      const tinymce = (window as any).tinymce
+      if (tinymce) {
+        const ed = tinymce.get(editorId)
+        if (ed) ed.remove()
       }
     }
-  }, [height])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorId, height])
 
   return (
-    <textarea
-      id={idRef.current}
-      defaultValue={value}
-      className="w-full min-h-[200px] border rounded-lg p-2 text-sm"
-    />
+    <div className="border rounded-lg overflow-hidden bg-white">
+      {!ready && (
+        <p className="text-xs text-slate-400 px-3 py-2 border-b">Loading editor…</p>
+      )}
+      <textarea
+        id={editorId}
+        ref={textareaRef}
+        defaultValue={value}
+        className="w-full min-h-[200px] p-3 text-sm"
+      />
+    </div>
   )
 }
