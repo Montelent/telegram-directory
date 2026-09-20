@@ -13,7 +13,6 @@ export async function GET() {
   if (!requireAdmin(session)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
   try {
     const posts = await prisma.blogPost.findMany({
       include: { category: true },
@@ -23,7 +22,7 @@ export async function GET() {
   } catch (e) {
     console.error(e)
     return NextResponse.json(
-      { error: 'Blog tables missing. Run the SQL migration in Supabase.' },
+      { error: 'Blog tables missing. Run the SQL migration.' },
       { status: 500 }
     )
   }
@@ -36,6 +35,9 @@ const schema = z.object({
   content: z.string().default(''),
   seoTitle: z.string().optional().nullable(),
   seoDescription: z.string().optional().nullable(),
+  focusKeyword: z.string().optional().nullable(),
+  canonicalUrl: z.string().optional().nullable(),
+  robots: z.string().optional().nullable(),
   published: z.boolean().optional(),
   categoryId: z.string().optional().nullable(),
 })
@@ -57,6 +59,8 @@ export async function POST(req: NextRequest) {
       '@type': 'BlogPosting',
       headline: seoTitle,
       description: seoDescription,
+      keywords: data.focusKeyword || undefined,
+      mainEntityOfPage: data.canonicalUrl || undefined,
       datePublished: data.published ? new Date().toISOString() : undefined,
     })
 
@@ -69,6 +73,9 @@ export async function POST(req: NextRequest) {
         seoTitle,
         seoDescription,
         seoJsonLd,
+        focusKeyword: data.focusKeyword,
+        canonicalUrl: data.canonicalUrl,
+        robots: data.robots || 'index,follow',
         published: !!data.published,
         publishedAt: data.published ? new Date() : null,
         categoryId: data.categoryId || null,
@@ -81,9 +88,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: e.errors }, { status: 400 })
     }
     console.error(e)
-    return NextResponse.json(
-      { error: 'Failed to create post. Ensure blog tables exist.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to create post' }, { status: 500 })
   }
 }

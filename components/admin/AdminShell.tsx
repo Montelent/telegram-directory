@@ -11,6 +11,8 @@ const navItems = [
   { href: '/admin/categories', label: 'Categories', icon: '📁' },
   { href: '/admin/submissions', label: 'Submissions', icon: '📥' },
   { href: '/admin/blog', label: 'Blog', icon: '✍️' },
+  { href: '/admin/users', label: 'Users', icon: '👤' },
+  { href: '/admin/settings', label: 'Settings / Ads', icon: '⚙️' },
   { href: '/admin/integrations', label: 'API Integrations', icon: '🔌' },
 ]
 
@@ -24,9 +26,7 @@ export default function AdminShell({
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
-  if (pathname === '/admin/login') {
-    return <>{children}</>
-  }
+  if (pathname === '/admin/login') return <>{children}</>
 
   function isActive(href: string) {
     if (href === '/admin') return pathname === '/admin'
@@ -68,53 +68,35 @@ export default function AdminShell({
           <p className="text-xs text-slate-500 truncate mb-2">{email}</p>
           <button
             onClick={() => signOut({ callbackUrl: '/admin/login' })}
-            className="w-full text-left text-sm text-red-600 hover:text-red-700 px-1"
+            className="w-full text-left text-sm text-red-600 px-1"
           >
             Sign out
           </button>
-          <Link href="/" className="block mt-2 text-xs text-slate-400 hover:text-slate-600 px-1">
-            ← Back to site
-          </Link>
         </div>
       </aside>
 
       <div className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 border-b bg-white flex items-center justify-between px-4">
-        <button onClick={() => setOpen(true)} className="p-2 -ml-2 text-slate-600" aria-label="Open menu">
+        <button onClick={() => setOpen(true)} className="p-2 -ml-2 text-slate-600" aria-label="Menu">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <Link href="/admin" className="font-bold text-slate-900">Admin</Link>
+        <Link href="/admin" className="font-bold">Admin</Link>
         <div className="w-10" />
       </div>
 
-      {open && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black/40" onClick={() => setOpen(false)} />
-      )}
+      {open && <div className="lg:hidden fixed inset-0 z-50 bg-black/40" onClick={() => setOpen(false)} />}
 
       <aside
-        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white shadow-xl transform transition-transform duration-200 ease-out ${
+        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white shadow-xl transition-transform ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="h-14 flex items-center justify-between px-4 border-b">
-          <span className="font-bold text-slate-900">Admin Panel</span>
-          <button onClick={() => setOpen(false)} className="p-2 text-slate-500" aria-label="Close menu">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <span className="font-bold">Admin Panel</span>
+          <button onClick={() => setOpen(false)} className="p-2">✕</button>
         </div>
         <NavLinks onNavigate={() => setOpen(false)} />
-        <div className="border-t p-4">
-          <p className="text-xs text-slate-500 truncate mb-2">{email}</p>
-          <button
-            onClick={() => signOut({ callbackUrl: '/admin/login' })}
-            className="w-full text-left text-sm text-red-600"
-          >
-            Sign out
-          </button>
-        </div>
       </aside>
 
       <div className="flex-1 lg:pl-64">
