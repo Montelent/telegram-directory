@@ -12,7 +12,9 @@ const navItems = [
   { href: '/admin/submissions', label: 'Submissions', icon: '📥' },
   { href: '/admin/blog', label: 'Blog', icon: '✍️' },
   { href: '/admin/users', label: 'Users', icon: '👤' },
-  { href: '/admin/settings', label: 'Settings / Ads', icon: '⚙️' },
+  { href: '/admin/ads', label: 'Ads', icon: '📣' },
+  { href: '/admin/scripts', label: 'Header / Footer scripts', icon: '🧩' },
+  { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
   { href: '/admin/integrations', label: 'API Integrations', icon: '🔌' },
 ]
 
