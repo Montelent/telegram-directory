@@ -12,29 +12,54 @@ interface Props {
 }
 
 export default async function EntityDetailPage({ params }: Props) {
-  const { username } = await params
+  const { username: raw } = await params
+  const username = decodeURIComponent(raw).toLowerCase().replace(/^@/, '').trim()
   const session = await getServerSession(authOptions)
 
-  const entity = await prisma.entity.findFirst({
+  let entity = await prisma.entity.findFirst({
     where: {
-      username: username.toLowerCase().replace(/^@/, ''),
-      status: 'APPROVED',
+      OR: [
+        { username: { equals: username, mode: 'insensitive' } },
+        { id: raw },
+      ],
     },
     include: {
       category: true,
-      reviews: {
-        include: { user: { select: { id: true, name: true, email: true } } },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      },
     },
   })
 
+  // Prefer approved; if only pending exists and user is admin, still show
+  if (entity && entity.status !== 'APPROVED') {
+    const role = (session?.user as any)?.role
+    if (role !== 'admin') {
+      entity = null as any
+    }
+  }
+
   if (!entity) notFound()
 
+  let reviews: {
+    id: string
+    rating: number
+    comment: string | null
+    createdAt: Date
+    user: { name: string | null; email: string }
+  }[] = []
+
+  try {
+    reviews = await prisma.review.findMany({
+      where: { entityId: entity.id },
+      include: { user: { select: { name: true, email: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    })
+  } catch {
+    // reviews table may not exist yet
+  }
+
   const avgRating =
-    entity.reviews.length > 0
-      ? entity.reviews.reduce((s, r) => s + r.rating, 0) / entity.reviews.length
+    reviews.length > 0
+      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
       : null
 
   const telegramUrl = entity.username
@@ -49,8 +74,16 @@ export default async function EntityDetailPage({ params }: Props) {
         </Link>
 
         <div className="bg-white rounded-xl border p-6 mt-4 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            {entity.photoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={entity.photoUrl}
+                alt={entity.title}
+                className="w-20 h-20 rounded-full object-cover border"
+              />
+            )}
+            <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold text-slate-900">{entity.title}</h1>
                 {entity.isVerified && (
@@ -70,7 +103,7 @@ export default async function EntityDetailPage({ params }: Props) {
                 <p className="text-blue-600 mt-1">@{entity.username}</p>
               )}
               {entity.description && (
-                <p className="text-slate-600 mt-3">{entity.description}</p>
+                <p className="text-slate-600 mt-3 whitespace-pre-line">{entity.description}</p>
               )}
               <div className="flex flex-wrap gap-3 mt-3 text-sm text-slate-500">
                 {entity.category && (
@@ -84,37 +117,31 @@ export default async function EntityDetailPage({ params }: Props) {
                 {entity.memberCount != null && (
                   <span>{entity.memberCount.toLocaleString()} members</span>
                 )}
+                {entity.language && <span>{entity.language}</span>}
                 {avgRating != null && (
                   <span>
-                    ★ {avgRating.toFixed(1)} ({entity.reviews.length} reviews)
+                    ★ {avgRating.toFixed(1)} ({reviews.length})
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Primary CTA: Open in Telegram first */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+          <div className="mt-6">
             <a
               href={telegramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-lg bg-[#0088cc] px-6 py-3 text-white font-semibold hover:bg-[#0077b5] transition text-center"
+              className="inline-flex w-full sm:w-auto items-center justify-center rounded-lg bg-[#0088cc] px-8 py-3.5 text-white font-semibold hover:bg-[#0077b5] transition text-center text-lg"
             >
               Open in Telegram
             </a>
-            <Link
-              href="/search"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-6 py-3 text-slate-700 font-medium hover:bg-slate-50 transition text-center"
-            >
-              Browse more
-            </Link>
           </div>
         </div>
 
         <ReviewSection
           entityId={entity.id}
-          reviews={entity.reviews.map((r) => ({
+          reviews={reviews.map((r) => ({
             id: r.id,
             rating: r.rating,
             comment: r.comment,
