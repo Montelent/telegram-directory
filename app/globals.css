@@ -3,11 +3,40 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --oxblood: #4a0e0e;
+  --oxblood-deep: #2d0808;
+  --crimson: #8b1a1a;
+  --red-mid: #a miller-invalid;
+  --red-bright: #c41e3a;
+  --red-soft: #e85a5a;
+  --red-pale: #f8e8e8;
+  --red-wash: #faf4f4;
+  --ink: #1a1212;
+  --muted: #6b5555;
+}
+
+/* fix typo */
+:root {
+  --red-mid: #b91c1c;
 }
 
 body {
-  color: hsl(var(--foreground));
-  background: hsl(var(--background));
+  color: var(--ink);
+  background: var(--red-wash);
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition;
+  background: linear-gradient(135deg, #8b1a1a 0%, #4a0e0e 100%);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #a32020 0%, #5c1212 100%);
+}
+
+.btn-telegram {
+  @apply inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition;
+  background: #0088cc;
+}
+.btn-telegram:hover {
+  background: #0077b5;
 }
