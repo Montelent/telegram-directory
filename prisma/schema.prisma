@@ -19,6 +19,11 @@ enum EntityStatus {
   ARCHIVED
 }
 
+enum TicketStatus {
+  OPEN
+  CLOSED
+}
+
 model Category {
   id          String   @id @default(cuid())
   name        String
@@ -58,6 +63,7 @@ model Entity {
 
   submissions   Submission[]
   reviews       Review[]
+  userMedia     UserMedia[]
 
   @@unique([username])
   @@index([status])
@@ -87,22 +93,45 @@ model Submission {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  password     String
+  balanceCents Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   reviews     Review[]
   submissions Submission[]
+  media       UserMedia[]
+  tickets     Ticket[]
 
   @@map("users")
 }
 
+model UserMedia {
+  id        String   @id @default(cuid())
+  title     String?
+  username  String
+  type      EntityType @default(CHANNEL)
+  status    EntityStatus @default(PENDING)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityId String?
+  entity   Entity? @relation(fields: [entityId], references: [id])
+
+  @@index([userId])
+  @@map("user_media")
+}
+
 model Review {
   id        String   @id @default(cuid())
-  rating    Int      // 1-5
+  rating    Int
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -115,6 +144,54 @@ model Review {
   @@unique([userId, entityId])
   @@index([entityId])
   @@map("reviews")
+}
+
+model BlogCategory {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts     BlogPost[]
+
+  @@map("blog_categories")
+}
+
+model BlogPost {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  excerpt         String?
+  content         String   // HTML from TinyMCE
+  coverImage      String?
+  published       Boolean  @default(false)
+  publishedAt     DateTime?
+  seoTitle        String?
+  seoDescription  String?
+  seoJsonLd       String?  // auto-generated JSON-LD
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  categoryId String?
+  category   BlogCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([published])
+  @@map("blog_posts")
+}
+
+model Ticket {
+  id        String       @id @default(cuid())
+  subject   String
+  message   String
+  status    TicketStatus @default(OPEN)
+  adminNote String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  userId String?
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@map("tickets")
 }
 
 model AdminUser {
