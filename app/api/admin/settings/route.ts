@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { getSiteSettings, setSiteSetting } from '@/lib/site-settings'
+import { requireAdmin } from '@/lib/admin-auth'
 
-function isAdmin(session: any) {
-  return session && (session.user as any)?.role === 'admin'
-}
-
-export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!isAdmin(session)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req)
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error, detail: auth.debug },
+      { status: auth.status }
+    )
   }
   const settings = await getSiteSettings()
   return NextResponse.json({ settings })
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!isAdmin(session)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAdmin(req)
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error, detail: auth.debug },
+      { status: auth.status }
+    )
   }
 
   try {
@@ -36,9 +37,10 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     console.error('settings save error', e)
     const msg = String(e?.message || e)
-    const hint = msg.includes('site_settings') || msg.includes('does not exist') || e?.code === 'P2021'
-      ? 'Run this in Supabase SQL Editor: CREATE TABLE IF NOT EXISTS "site_settings" ("id" TEXT PRIMARY KEY, "key" TEXT NOT NULL UNIQUE, "value" TEXT NOT NULL DEFAULT \'\', "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);'
-      : msg.slice(0, 200)
+    const hint =
+      msg.includes('site_settings') || msg.includes('does not exist') || e?.code === 'P2021'
+        ? 'Create site_settings table in Supabase SQL Editor.'
+        : msg.slice(0, 240)
     return NextResponse.json({ error: 'Failed to save', detail: hint }, { status: 500 })
   }
 }
