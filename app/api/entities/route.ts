@@ -6,7 +6,8 @@ export async function GET(req: NextRequest) {
 
   const q = searchParams.get('q')?.trim() || ''
   const category = searchParams.get('category') || ''
-  const type = searchParams.get('type') || '' // GROUP | CHANNEL
+  const type = searchParams.get('type') || ''
+  const sort = searchParams.get('sort') || 'members'
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20')))
   const skip = (page - 1) * limit
@@ -31,13 +32,20 @@ export async function GET(req: NextRequest) {
     where.type = type
   }
 
+  let orderBy: any[] = [{ memberCount: 'desc' }, { title: 'asc' }]
+  if (sort === 'rating') {
+    orderBy = [{ isVerified: 'desc' }, { memberCount: 'desc' }, { title: 'asc' }]
+  } else if (sort === 'trending') {
+    orderBy = [{ updatedAt: 'desc' }, { memberCount: 'desc' }]
+  } else if (sort === 'members') {
+    orderBy = [{ memberCount: 'desc' }, { title: 'asc' }]
+  }
+
   const [entities, total] = await Promise.all([
     prisma.entity.findMany({
       where,
-      include: {
-        category: true,
-      },
-      orderBy: [{ memberCount: 'desc' }, { title: 'asc' }],
+      include: { category: true },
+      orderBy,
       skip,
       take: limit,
     }),
