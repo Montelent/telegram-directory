@@ -66,18 +66,6 @@ export default function SubmitPage() {
     setStatus('loading')
     setMessage('')
 
-    const description = [shortDesc, longDesc].filter(Boolean).join('\n\n')
-    const notes = [
-      tags ? `Tags: ${tags}` : '',
-      nsfw ? 'NSFW: yes' : '',
-      feature ? `Feature requested ($${featurePrice})` : '',
-      `Language: ${language}`,
-      `Country: ${country}`,
-      `Category: ${category}`,
-    ]
-      .filter(Boolean)
-      .join(' | ')
-
     try {
       const res = await fetch('/api/submissions', {
         method: 'POST',
@@ -85,17 +73,21 @@ export default function SubmitPage() {
         body: JSON.stringify({
           username,
           title: title.slice(0, 120),
-          description: description.slice(0, 5000),
+          shortDesc: shortDesc.slice(0, 170),
+          longDesc,
+          tags,
           type,
-          notes,
           language,
           country,
+          isNsfw: nsfw,
+          wantFeature: feature,
+          notes: `Category: ${category}`,
         }),
       })
       const data = await res.json()
       if (!res.ok) {
         setStatus('error')
-        setMessage(typeof data.error === 'string' ? data.error : 'Submission failed')
+        setMessage(typeof data.error === 'string' ? data.error : 'Submission failed — run full_migration.sql in Supabase')
         return
       }
       setStep('done')
@@ -143,8 +135,8 @@ export default function SubmitPage() {
 
         {step === 'done' && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-emerald-800">
-            <p className="font-semibold">Submitted for review</p>
-            <p className="text-sm mt-1">We will check your media shortly.</p>
+            <p className="font-semibold">Saved to database</p>
+            <p className="text-sm mt-1">Submission is pending admin review in Supabase / Admin → Submissions.</p>
             <button
               type="button"
               onClick={() => {
@@ -161,7 +153,7 @@ export default function SubmitPage() {
 
         {step === 'link' && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Media&apos;s Link</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Media's Link</label>
             <input
               value={link}
               onChange={(e) => setLink(e.target.value)}
@@ -183,7 +175,6 @@ export default function SubmitPage() {
 
         {step === 'form' && (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Preview chip */}
             <div className="bg-white rounded-2xl border border-slate-200 p-3 flex items-center gap-3">
               <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-lg shrink-0">
                 📢
@@ -194,7 +185,6 @@ export default function SubmitPage() {
               </div>
             </div>
 
-            {/* About */}
             <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
               <div>
                 <h2 className="font-semibold text-slate-900">About</h2>
@@ -239,7 +229,6 @@ export default function SubmitPage() {
               </div>
             </section>
 
-            {/* Classification */}
             <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
               <div>
                 <h2 className="font-semibold text-slate-900">Classification</h2>
@@ -302,7 +291,6 @@ export default function SubmitPage() {
               </label>
             </section>
 
-            {/* Feature */}
             <section className="bg-amber-50/80 rounded-2xl border border-amber-200 p-4">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-amber-600">⭐</span>
@@ -336,7 +324,7 @@ export default function SubmitPage() {
                 disabled={status === 'loading'}
                 className="flex-1 rounded-xl bg-[#1a2332] hover:bg-[#0f1620] py-3 text-sm font-semibold text-white disabled:opacity-50"
               >
-                {status === 'loading' ? '…' : 'ADD'}
+                {status === 'loading' ? 'Saving…' : 'ADD'}
               </button>
             </div>
           </form>
