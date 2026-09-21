@@ -17,7 +17,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
-  if (!session) {
+  if (!session || (session.user as any)?.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -36,35 +36,36 @@ export async function PATCH(
     }
 
     if (submission.status !== 'PENDING') {
-      return NextResponse.json(
-        { error: 'Submission already processed' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Submission already processed' }, { status: 400 })
     }
 
     if (data.action === 'reject') {
       await prisma.submission.update({
         where: { id },
-        data: {
-          status: 'REJECTED',
-          notes: data.notes,
-        },
+        data: { status: 'REJECTED', notes: data.notes },
       })
+
+      // Mirror reject on user_media rows with same username
+      try {
+        await prisma.userMedia.updateMany({
+          where: { username: submission.username },
+          data: { status: 'REJECTED' },
+        })
+      } catch {
+        /* */
+      }
 
       return NextResponse.json({ success: true, status: 'REJECTED' })
     }
 
-    // Approve → create or update Entity
     const title = data.title || submission.title || submission.username
     const description = data.description ?? submission.description
 
-    // Check if entity with this username already exists
     let entity = await prisma.entity.findUnique({
       where: { username: submission.username },
     })
 
     if (entity) {
-      // Update existing
       entity = await prisma.entity.update({
         where: { id: entity.id },
         data: {
@@ -73,11 +74,16 @@ export async function PATCH(
           type: submission.type,
           status: 'APPROVED',
           categoryId: data.categoryId || entity.categoryId,
+          language: submission.language || entity.language,
+          country: submission.country || entity.country,
+          shortDesc: (submission as any).shortDesc || entity.shortDesc,
+          longDesc: (submission as any).longDesc || entity.longDesc,
+          tags: (submission as any).tags || entity.tags,
+          isNsfw: (submission as any).isNsfw ?? entity.isNsfw,
           source: 'submission',
         },
       })
     } else {
-      // Create new
       entity = await prisma.entity.create({
         data: {
           username: submission.username,
@@ -86,12 +92,17 @@ export async function PATCH(
           type: submission.type,
           status: 'APPROVED',
           categoryId: data.categoryId,
+          language: submission.language,
+          country: submission.country,
+          shortDesc: (submission as any).shortDesc,
+          longDesc: (submission as any).longDesc,
+          tags: (submission as any).tags,
+          isNsfw: (submission as any).isNsfw ?? false,
           source: 'submission',
         },
       })
     }
 
-    // Update submission
     await prisma.submission.update({
       where: { id },
       data: {
@@ -100,6 +111,20 @@ export async function PATCH(
         entityId: entity.id,
       },
     })
+
+    // Critical: update user dashboard media list status
+    try {
+      await prisma.userMedia.updateMany({
+        where: { username: submission.username },
+        data: {
+          status: 'APPROVED',
+          entityId: entity.id,
+          title: title,
+        },
+      })
+    } catch (e) {
+      console.error('userMedia sync failed', e)
+    }
 
     return NextResponse.json({ success: true, status: 'APPROVED', entityId: entity.id })
   } catch (error) {

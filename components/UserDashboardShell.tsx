@@ -8,6 +8,7 @@ import { signOut } from 'next-auth/react'
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: 'overview' },
   { href: '/dashboard/media', label: 'Media list', icon: 'media' },
+  { href: '/submit', label: 'Add media', icon: 'add' },
   { href: '/dashboard/collections', label: 'My collections', icon: 'collections' },
   { href: '/dashboard/deposit', label: 'Deposit', icon: 'deposit' },
   { href: '/dashboard/ads', label: 'Advertising', icon: 'ads' },
@@ -17,6 +18,12 @@ const nav = [
 function Icon({ name }: { name: string }) {
   const cls = 'w-5 h-5'
   switch (name) {
+    case 'add':
+      return (
+        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+        </svg>
+      )
     case 'overview':
       return (
         <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,12 +77,13 @@ export default function UserDashboardShell({
 
   function active(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard'
+    if (href === '/submit') return pathname === '/submit'
     return pathname.startsWith(href)
   }
 
   const Nav = ({ onNav }: { onNav?: () => void }) => (
     <nav className="flex flex-col gap-0.5 px-3 py-4">
-      <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+      <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#9a7777]">
         Overview
       </p>
       {nav.map((item) => (
@@ -85,8 +93,8 @@ export default function UserDashboardShell({
           onClick={onNav}
           className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
             active(item.href)
-              ? 'bg-violet-50 text-violet-700'
-              : 'text-slate-600 hover:bg-slate-50'
+              ? 'bg-[#f8e8e8] text-[#8b1a1a]'
+              : 'text-[#5c4040] hover:bg-[#faf4f4]'
           }`}
         >
           <Icon name={item.icon} />
@@ -97,37 +105,37 @@ export default function UserDashboardShell({
   )
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] flex">
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col md:w-[260px] md:fixed md:inset-y-0 bg-white border-r border-slate-100">
-        <div className="h-16 flex items-center px-5 border-b border-slate-100">
-          <Link href="/" className="font-bold text-slate-900 tracking-tight">
+    <div className="min-h-screen bg-[#faf4f4] flex">
+      <aside className="hidden md:flex md:flex-col md:w-[260px] md:fixed md:inset-y-0 bg-white border-r border-[#f0e0e0]">
+        <div className="h-16 flex items-center px-5 border-b border-[#f0e0e0]">
+          <Link href="/" className="font-bold text-[#2d0808] tracking-tight">
             Telegram Directory
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto">
           <Nav />
         </div>
-        <div className="p-4 border-t border-slate-100">
-          <p className="text-xs text-slate-500 truncate">{name || email}</p>
+        <div className="p-4 border-t border-[#f0e0e0]">
+          <p className="text-xs text-[#6b5555] truncate">{name || email}</p>
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
-            className="mt-2 text-xs text-red-500 hover:text-red-600"
+            className="mt-2 text-xs text-[#c41e3a] hover:underline"
           >
             Sign out
           </button>
         </div>
       </aside>
 
-      {/* Mobile top */}
-      <div className="md:hidden fixed top-0 inset-x-0 z-40 h-14 bg-white border-b flex items-center justify-between px-4">
+      <div className="md:hidden fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-[#f0e0e0] flex items-center justify-between px-4">
         <button onClick={() => setOpen(true)} className="p-2 -ml-2" aria-label="Menu">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span className="font-semibold text-sm">Dashboard</span>
-        <Link href="/" className="text-xs text-violet-600">Site</Link>
+        <span className="font-semibold text-sm text-[#2d0808]">Dashboard</span>
+        <Link href="/submit" className="text-xs font-semibold text-[#8b1a1a]">
+          + Add
+        </Link>
       </div>
 
       {open && <div className="md:hidden fixed inset-0 z-50 bg-black/30" onClick={() => setOpen(false)} />}
@@ -137,7 +145,7 @@ export default function UserDashboardShell({
         }`}
       >
         <div className="h-14 flex items-center justify-between px-4 border-b">
-          <span className="font-bold">Menu</span>
+          <span className="font-bold text-[#2d0808]">Menu</span>
           <button onClick={() => setOpen(false)}>✕</button>
         </div>
         <Nav onNav={() => setOpen(false)} />
