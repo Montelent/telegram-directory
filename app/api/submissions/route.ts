@@ -2,19 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { EntityType } from '@prisma/client'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 const submissionSchema = z.object({
   username: z.string().min(1).max(100),
   title: z.string().max(200).optional(),
   description: z.string().max(10000).optional(),
+  shortDesc: z.string().max(300).optional(),
+  longDesc: z.string().max(20000).optional(),
+  tags: z.string().max(500).optional(),
   type: z.enum(['GROUP', 'CHANNEL']),
   notes: z.string().max(2000).optional(),
   language: z.string().max(50).optional(),
   country: z.string().max(50).optional(),
+  isNsfw: z.boolean().optional(),
+  wantFeature: z.boolean().optional(),
 })
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
     const body = await req.json()
     const data = submissionSchema.parse(body)
 
@@ -38,18 +46,52 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const notesParts = [data.notes, data.language && `lang:${data.language}`, data.country && `country:${data.country}`].filter(Boolean)
+    const userId =
+      session && (session.user as any)?.role === 'user'
+        ? ((session.user as any).id as string)
+        : undefined
+
+    const description =
+      data.description ||
+      [data.shortDesc, data.longDesc].filter(Boolean).join('\n\n') ||
+      null
 
     const submission = await prisma.submission.create({
       data: {
         username,
         title: data.title,
-        description: data.description,
+        description,
+        shortDesc: data.shortDesc,
+        longDesc: data.longDesc,
+        tags: data.tags,
+        language: data.language,
+        country: data.country,
+        isNsfw: !!data.isNsfw,
+        wantFeature: !!data.wantFeature,
         type: data.type as EntityType,
         status: 'PENDING',
-        notes: notesParts.join(' | ') || null,
+        notes: data.notes || null,
+        userId: userId || null,
       },
     })
+
+    // Also mirror into user_media when logged in
+    if (userId) {
+      try {
+        await prisma.userMedia.create({
+          data: {
+            userId,
+            username,
+            title: data.title || username,
+            type: data.type as EntityType,
+            status: 'PENDING',
+            notes: data.tags || null,
+          },
+        })
+      } catch (e) {
+        console.error('userMedia mirror failed', e)
+      }
+    }
 
     return NextResponse.json({ success: true, id: submission.id }, { status: 201 })
   } catch (error) {
@@ -57,6 +99,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.errors }, { status: 400 })
     }
     console.error('Submission error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      {
+        error:
+          'Database error. Run supabase/full_migration.sql in Supabase SQL Editor.',
+      },
+      { status: 500 }
+    )
   }
 }

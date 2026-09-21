@@ -41,6 +41,9 @@ model Entity {
   username      String?
   title         String
   description   String?
+  shortDesc     String?
+  longDesc      String?
+  tags          String?
   type          EntityType
   status        EntityStatus @default(PENDING)
   memberCount   Int?
@@ -50,6 +53,9 @@ model Entity {
   photoUrl      String?
   isVerified    Boolean      @default(false)
   isScam        Boolean      @default(false)
+  isNsfw        Boolean      @default(false)
+  isFeatured    Boolean      @default(false)
+  featuredUntil DateTime?
   lastCheckedAt DateTime?
   source        String?
   externalId    String?
@@ -64,6 +70,7 @@ model Entity {
   @@index([status])
   @@index([type])
   @@index([categoryId])
+  @@index([isFeatured])
   @@map("entities")
 }
 
@@ -72,6 +79,13 @@ model Submission {
   username    String
   title       String?
   description String?
+  shortDesc   String?
+  longDesc    String?
+  tags        String?
+  language    String?
+  country     String?
+  isNsfw      Boolean      @default(false)
+  wantFeature Boolean      @default(false)
   type        EntityType
   status      EntityStatus @default(PENDING)
   submittedBy String?
@@ -98,6 +112,7 @@ model User {
   submissions  Submission[]
   media        UserMedia[]
   tickets      Ticket[]
+  deposits     Deposit[]
   @@map("users")
 }
 
@@ -177,6 +192,21 @@ model Ticket {
   userId    String?
   user      User?        @relation(fields: [userId], references: [id])
   @@map("tickets")
+}
+
+model Deposit {
+  id          String   @id @default(cuid())
+  amountCents Int
+  method      String
+  status      String   @default("pending")
+  reference   String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("deposits")
 }
 
 model SiteSetting {
