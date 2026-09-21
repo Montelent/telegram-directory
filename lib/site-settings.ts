@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { randomBytes } from 'crypto'
 
 export type SiteSettingsMap = Record<string, string>
 
@@ -14,10 +15,14 @@ const DEFAULTS: SiteSettingsMap = {
   default_seo_description: 'Discover public Telegram groups and channels.',
 }
 
+function newId() {
+  return randomBytes(12).toString('hex')
+}
+
 /** Read settings; falls back to defaults if table missing */
 export async function getSiteSettings(): Promise<SiteSettingsMap> {
   try {
-    const rows = await (prisma as any).siteSetting.findMany()
+    const rows = await prisma.siteSetting.findMany()
     const map = { ...DEFAULTS }
     for (const r of rows) {
       map[r.key] = r.value ?? ''
@@ -29,9 +34,16 @@ export async function getSiteSettings(): Promise<SiteSettingsMap> {
 }
 
 export async function setSiteSetting(key: string, value: string) {
-  return (prisma as any).siteSetting.upsert({
+  // Always set id on create — DB column has no default
+  return prisma.siteSetting.upsert({
     where: { key },
-    create: { key, value },
-    update: { value },
+    create: {
+      id: newId(),
+      key,
+      value: value ?? '',
+    },
+    update: {
+      value: value ?? '',
+    },
   })
 }

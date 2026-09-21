@@ -25,15 +25,20 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const settings = body.settings as Record<string, string>
-    for (const [key, value] of Object.entries(settings || {})) {
+    if (!settings || typeof settings !== 'object') {
+      return NextResponse.json({ error: 'No settings provided' }, { status: 400 })
+    }
+
+    for (const [key, value] of Object.entries(settings)) {
       await setSiteSetting(key, value ?? '')
     }
     return NextResponse.json({ ok: true })
-  } catch (e) {
-    console.error(e)
-    return NextResponse.json(
-      { error: 'Failed. Create site_settings table in Supabase.' },
-      { status: 500 }
-    )
+  } catch (e: any) {
+    console.error('settings save error', e)
+    const msg = String(e?.message || e)
+    const hint = msg.includes('site_settings') || msg.includes('does not exist') || e?.code === 'P2021'
+      ? 'Run this in Supabase SQL Editor: CREATE TABLE IF NOT EXISTS "site_settings" ("id" TEXT PRIMARY KEY, "key" TEXT NOT NULL UNIQUE, "value" TEXT NOT NULL DEFAULT \'\', "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);'
+      : msg.slice(0, 200)
+    return NextResponse.json({ error: 'Failed to save', detail: hint }, { status: 500 })
   }
 }
