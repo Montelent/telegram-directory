@@ -12,6 +12,7 @@ const navItems = [
   { href: '/admin/submissions', label: 'Submissions', icon: '📥' },
   { href: '/admin/blog', label: 'Blog', icon: '✍️' },
   { href: '/admin/users', label: 'Users', icon: '👤' },
+  { href: '/admin/payments', label: 'Payments', icon: '💳' },
   { href: '/admin/ads', label: 'Ads', icon: '📣' },
   { href: '/admin/scripts', label: 'Header / Footer scripts', icon: '🧩' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
@@ -36,7 +37,7 @@ export default function AdminShell({
   }
 
   const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
-    <nav className="flex flex-col gap-1 p-3">
+    <nav className="flex flex-col gap-0.5 p-3">
       {navItems.map((item) => (
         <Link
           key={item.href}
@@ -44,8 +45,8 @@ export default function AdminShell({
           onClick={onNavigate}
           className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
             isActive(item.href)
-              ? 'bg-blue-50 text-blue-700'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              ? 'bg-[#f8e8e8] text-[#8b1a1a]'
+              : 'text-[#5c4040] hover:bg-[#faf4f4]'
           }`}
         >
           <span className="text-base">{item.icon}</span>
@@ -56,34 +57,34 @@ export default function AdminShell({
   )
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 border-r bg-white">
-        <div className="h-14 flex items-center px-5 border-b">
-          <Link href="/admin" className="font-bold text-lg text-slate-900">
+    <div className="min-h-screen bg-[#faf4f4] flex">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 border-r border-[#f0e0e0] bg-white">
+        <div className="h-14 flex items-center px-5 border-b border-[#f0e0e0]">
+          <Link href="/admin" className="font-bold text-lg text-[#2d0808]">
             Admin Panel
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto">
           <NavLinks />
         </div>
-        <div className="border-t p-4">
-          <p className="text-xs text-slate-500 truncate mb-2">{email}</p>
+        <div className="border-t border-[#f0e0e0] p-4">
+          <p className="text-xs text-[#6b5555] truncate mb-2">{email}</p>
           <button
             onClick={() => signOut({ callbackUrl: '/admin/login' })}
-            className="w-full text-left text-sm text-red-600 px-1"
+            className="w-full text-left text-sm text-[#c41e3a] px-1"
           >
             Sign out
           </button>
         </div>
       </aside>
 
-      <div className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 border-b bg-white flex items-center justify-between px-4">
-        <button onClick={() => setOpen(true)} className="p-2 -ml-2 text-slate-600" aria-label="Menu">
+      <div className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 border-b border-[#f0e0e0] bg-white flex items-center justify-between px-4">
+        <button onClick={() => setOpen(true)} className="p-2 -ml-2 text-[#4a0e0e]" aria-label="Menu">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <Link href="/admin" className="font-bold">Admin</Link>
+        <Link href="/admin" className="font-bold text-[#2d0808]">Admin</Link>
         <div className="w-10" />
       </div>
 
@@ -94,8 +95,8 @@ export default function AdminShell({
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="h-14 flex items-center justify-between px-4 border-b">
-          <span className="font-bold">Admin Panel</span>
+        <div className="h-14 flex items-center justify-between px-4 border-b border-[#f0e0e0]">
+          <span className="font-bold text-[#2d0808]">Admin Panel</span>
           <button onClick={() => setOpen(false)} className="p-2">✕</button>
         </div>
         <NavLinks onNavigate={() => setOpen(false)} />
