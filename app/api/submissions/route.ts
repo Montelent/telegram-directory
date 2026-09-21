@@ -6,8 +6,11 @@ import { EntityType } from '@prisma/client'
 const submissionSchema = z.object({
   username: z.string().min(1).max(100),
   title: z.string().max(200).optional(),
-  description: z.string().max(1000).optional(),
+  description: z.string().max(10000).optional(),
   type: z.enum(['GROUP', 'CHANNEL']),
+  notes: z.string().max(2000).optional(),
+  language: z.string().max(50).optional(),
+  country: z.string().max(50).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -15,17 +18,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const data = submissionSchema.parse(body)
 
-    // Normalize username (remove @ and t.me/ prefixes)
     let username = data.username.trim()
     username = username.replace(/^@/, '')
     username = username.replace(/^https?:\/\/(t\.me|telegram\.me)\//, '')
-    username = username.split('/')[0] // remove any path
+    username = username.split('/')[0]
 
     if (!username) {
       return NextResponse.json({ error: 'Invalid username' }, { status: 400 })
     }
 
-    // Check if already exists as approved entity
     const existing = await prisma.entity.findUnique({
       where: { username },
     })
@@ -37,7 +38,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create submission
+    const notesParts = [data.notes, data.language && `lang:${data.language}`, data.country && `country:${data.country}`].filter(Boolean)
+
     const submission = await prisma.submission.create({
       data: {
         username,
@@ -45,6 +47,7 @@ export async function POST(req: NextRequest) {
         description: data.description,
         type: data.type as EntityType,
         status: 'PENDING',
+        notes: notesParts.join(' | ') || null,
       },
     })
 

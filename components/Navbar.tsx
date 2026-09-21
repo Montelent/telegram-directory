@@ -16,9 +16,9 @@ export default function Navbar() {
   const isUser = session && (session.user as any)?.role === 'user'
 
   const topLinks = [
-    { href: '/search?sort=members', label: 'Ranking' },
-    { href: '/search', label: 'Trending' },
-    { href: '/search?sort=rating', label: 'Rating' },
+    { href: '/ranking', label: 'Ranking' },
+    { href: '/trending', label: 'Trending' },
+    { href: '/top', label: 'Rating' },
   ]
 
   const mainLinks = [
@@ -29,7 +29,6 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50">
-      {/* Top thin bar */}
       <div className="bg-[#2d0808] text-[#f0d0d0] text-[11px]">
         <div className="container mx-auto px-4 h-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -66,7 +65,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Main header */}
       <div className="bg-white border-b border-[#f0e0e0] shadow-sm">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
