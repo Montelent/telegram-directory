@@ -17,6 +17,8 @@ export default function SubmitPage() {
   const [shortDesc, setShortDesc] = useState('')
   const [longDesc, setLongDesc] = useState('')
   const [tags, setTags] = useState('')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [memberCount, setMemberCount] = useState<number | null>(null)
   const [language, setLanguage] = useState('English')
   const [country, setCountry] = useState('Global')
   const [category, setCategory] = useState('other')
@@ -29,35 +31,58 @@ export default function SubmitPage() {
   const [showRules, setShowRules] = useState(false)
   const featurePrice = 20
 
-  function parseTelegramLink(raw: string) {
-    const cleaned = raw.trim()
-    const match = cleaned.match(/(?:https?:\/\/)?(?:t\.me\/|telegram\.me\/)?@?([a-zA-Z0-9_]{4,})/i)
-    return match ? match[1] : cleaned.replace(/^@/, '').replace(/\s/g, '')
-  }
-
   async function handleFetch() {
-    const u = parseTelegramLink(link)
-    if (!u || u.length < 4) {
+    if (!link.trim()) {
       setMessage('Enter a valid Telegram link or username')
       setStatus('error')
       return
     }
     setStatus('fetching')
     setMessage('')
+
     try {
-      const catsRes = await fetch('/api/categories')
+      const [fetchRes, catsRes] = await Promise.all([
+        fetch('/api/media/fetch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ link }),
+        }),
+        fetch('/api/categories'),
+      ])
+
       if (catsRes.ok) {
         const cats = await catsRes.json()
         if (Array.isArray(cats)) setCategories(cats.map((c: any) => ({ slug: c.slug, name: c.name })))
       }
-    } catch { /* */ }
 
-    setUsername(u)
-    setTitle(u)
-    setShortDesc('')
-    setLongDesc('')
-    setStep('form')
-    setStatus('idle')
+      const data = await fetchRes.json()
+      if (!fetchRes.ok) {
+        setStatus('error')
+        setMessage(data.error || 'Fetch failed')
+        return
+      }
+
+      setUsername(data.username)
+      setTitle(data.title || data.username)
+      setShortDesc(data.shortDesc || '')
+      setLongDesc(data.longDesc || data.shortDesc || '')
+      setPhotoUrl(data.photoUrl || null)
+      setMemberCount(data.memberCount ?? null)
+      if (data.type === 'GROUP' || data.type === 'CHANNEL') setType(data.type)
+
+      // Auto-suggest tags from hashtags in description
+      const hashTags = String(data.shortDesc || data.longDesc || '').match(/#[\w]+/g)
+      if (hashTags?.length) {
+        setTags([...new Set(hashTags.map((t: string) => t.replace(/^#/, '')))].slice(0, 5).join(', '))
+      }
+
+      if (data.warning) setMessage(data.warning)
+      setStep('form')
+      setStatus('idle')
+    } catch {
+      setStatus('error')
+      setMessage('Network error while fetching')
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -81,13 +106,19 @@ export default function SubmitPage() {
           country,
           isNsfw: nsfw,
           wantFeature: feature,
-          notes: `Category: ${category}`,
+          notes: [
+            `Category: ${category}`,
+            photoUrl ? `photo:${photoUrl}` : '',
+            memberCount != null ? `members:${memberCount}` : '',
+          ]
+            .filter(Boolean)
+            .join(' | '),
         }),
       })
       const data = await res.json()
       if (!res.ok) {
         setStatus('error')
-        setMessage(typeof data.error === 'string' ? data.error : 'Submission failed — run full_migration.sql in Supabase')
+        setMessage(typeof data.error === 'string' ? data.error : 'Submission failed')
         return
       }
       setStep('done')
@@ -136,7 +167,7 @@ export default function SubmitPage() {
         {step === 'done' && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-emerald-800">
             <p className="font-semibold">Saved to database</p>
-            <p className="text-sm mt-1">Submission is pending admin review in Supabase / Admin → Submissions.</p>
+            <p className="text-sm mt-1">Pending admin review.</p>
             <button
               type="button"
               onClick={() => {
@@ -153,11 +184,11 @@ export default function SubmitPage() {
 
         {step === 'link' && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Media's Link</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Media&apos;s Link</label>
             <input
               value={link}
               onChange={(e) => setLink(e.target.value)}
-              placeholder="https://t.me/dailychannels or @username"
+              placeholder="https://t.me/dailychannels or coursecouponclub"
               className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-800/20"
             />
             <button
@@ -176,30 +207,42 @@ export default function SubmitPage() {
         {step === 'form' && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200 p-3 flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-lg shrink-0">
-                📢
-              </div>
+              {photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoUrl} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-lg shrink-0">
+                  📢
+                </div>
+              )}
               <div className="min-w-0">
                 <p className="font-semibold text-sm text-slate-900 truncate">{title || username}</p>
-                <p className="text-xs text-slate-400">@{username}</p>
+                <p className="text-xs text-slate-400">
+                  @{username}
+                  {memberCount != null ? ` · ${memberCount.toLocaleString()} members` : ''}
+                </p>
               </div>
             </div>
+
+            {message && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">{message}</p>
+            )}
 
             <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
               <div>
                 <h2 className="font-semibold text-slate-900">About</h2>
-                <p className="text-xs text-slate-400">Name, description and tags</p>
+                <p className="text-xs text-slate-400">Name, description and tags — prefilled from Telegram</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700">Media Name</label>
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  maxLength={45}
+                  maxLength={120}
                   required
                   className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                 />
-                <p className="text-[11px] text-slate-400 mt-0.5">Keep it less than 45 characters</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">{title.length}/120 · from Telegram title</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700">Short Description</label>
@@ -207,10 +250,11 @@ export default function SubmitPage() {
                   value={shortDesc}
                   onChange={(e) => setShortDesc(e.target.value)}
                   maxLength={170}
-                  rows={3}
+                  rows={4}
                   className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  placeholder="Used in search results and Google snippets. Aim for 150–170 characters."
+                  placeholder="Used in search results and Google snippets."
                 />
+                <p className="text-[11px] text-slate-400 mt-0.5">{shortDesc.length}/170 · from Telegram about</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700">Tags</label>
@@ -218,14 +262,13 @@ export default function SubmitPage() {
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  placeholder="Type a tag…"
+                  placeholder="udemy, coupon, courses"
                 />
-                <p className="text-[11px] text-slate-400 mt-0.5">Up to five keywords</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Auto-filled from #hashtags when found</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700 mb-1 block">Long Description</label>
                 <TinyMCEEditor value={longDesc} onChange={setLongDesc} height={280} />
-                <p className="text-[11px] text-slate-400 mt-1">A few paragraphs help SEO. Aim for about 300 words.</p>
               </div>
             </section>
 
@@ -286,7 +329,7 @@ export default function SubmitPage() {
                 <input type="checkbox" checked={nsfw} onChange={(e) => setNsfw(e.target.checked)} className="mt-0.5" />
                 <span>
                   <span className="font-medium">Mark as NSFW</span>
-                  <span className="block text-xs text-slate-400">Not safe for work or family. May include adult content.</span>
+                  <span className="block text-xs text-slate-400">Not safe for work or family.</span>
                 </span>
               </label>
             </section>
@@ -296,15 +339,11 @@ export default function SubmitPage() {
                 <span className="text-amber-600">⭐</span>
                 <h2 className="font-semibold text-slate-900">Feature (optional)</h2>
               </div>
-              <p className="text-xs text-slate-500 mb-3">Skip approval and get more visibility</p>
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" checked={feature} onChange={(e) => setFeature(e.target.checked)} className="mt-0.5" />
                 <span>
                   <span className="font-medium">Feature this media</span>
-                  <span className="ml-2 font-bold text-slate-800">${featurePrice}</span>
-                  <span className="block text-xs text-slate-500 mt-0.5">
-                    Shown on the Homepage, category tops, related lists, and relevant search results.
-                  </span>
+                  <span className="ml-2 font-bold">${featurePrice}</span>
                 </span>
               </label>
             </section>
