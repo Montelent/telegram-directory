@@ -5,57 +5,16 @@ import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import OnlineBadge from '@/components/OnlineBadge'
+import type { MenuLink, MenuSection } from '@/lib/menu'
+import { DEFAULT_TOP_LINKS, DEFAULT_DRAWER } from '@/lib/menu'
 
-type LinkItem = { href: string; label: string; icon: string }
-type Section = { title: string; icon: string; links: LinkItem[] }
-
-const DRAWER: Section[] = [
-  {
-    title: 'Media',
-    icon: 'M',
-    links: [
-      { href: '/channels', label: 'Channels', icon: 'C' },
-      { href: '/groups', label: 'Groups', icon: 'G' },
-      { href: '/bots', label: 'Bots', icon: 'B' },
-    ],
-  },
-  {
-    title: 'Discover',
-    icon: 'D',
-    links: [
-      { href: '/ranking', label: 'Ranking', icon: 'R' },
-      { href: '/trending', label: 'Trending', icon: 'T' },
-      { href: '/top', label: 'Rating', icon: 'S' },
-      { href: '/explore', label: 'Explore', icon: 'E' },
-      { href: '/lucky', label: "I'm Feeling Lucky", icon: '*' },
-    ],
-  },
-  {
-    title: 'Tools',
-    icon: 'T',
-    links: [
-      { href: '/search', label: 'Search', icon: '?' },
-      { href: '/compare', label: 'Compare', icon: '=' },
-      { href: '/tag', label: 'Tags', icon: '#' },
-      { href: '/collections', label: 'Collections', icon: 'L' },
-    ],
-  },
-  {
-    title: 'Content',
-    icon: 'W',
-    links: [
-      { href: '/blog', label: 'Blog', icon: 'B' },
-      { href: '/submit', label: 'Add media', icon: '+' },
-    ],
-  },
-  {
-    title: 'Account',
-    icon: 'A',
-    links: [], // filled dynamically
-  },
-]
-
-export default function Navbar() {
+export default function Navbar({
+  topLinks = DEFAULT_TOP_LINKS,
+  drawerSections = DEFAULT_DRAWER,
+}: {
+  topLinks?: MenuLink[]
+  drawerSections?: MenuSection[]
+}) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   /** All sections start collapsed until user expands */
@@ -66,12 +25,6 @@ export default function Navbar() {
   if (pathname?.startsWith('/admin')) return null
 
   const isUser = session && (session.user as any)?.role === 'user'
-
-  const topLinks = [
-    { href: '/ranking', label: 'Ranking' },
-    { href: '/trending', label: 'Trending' },
-    { href: '/top', label: 'Rating' },
-  ]
 
   function closeDrawer() {
     setDrawerOpen(false)
@@ -85,7 +38,7 @@ export default function Navbar() {
     return pathname === href || Boolean(pathname?.startsWith(href + '/'))
   }
 
-  const accountLinks: LinkItem[] = isUser
+  const accountLinks: MenuLink[] = isUser
     ? [
         { href: '/dashboard', label: 'Dashboard', icon: 'D' },
         { href: '/dashboard/settings', label: 'Settings', icon: 'S' },
@@ -94,6 +47,11 @@ export default function Navbar() {
         { href: '/login', label: 'Log in', icon: 'L' },
         { href: '/signup', label: 'Sign up', icon: '+' },
       ]
+
+  const sections: MenuSection[] = [
+    ...drawerSections,
+    { title: 'Account', icon: 'A', links: [] }, // filled dynamically below
+  ]
 
   return (
     <header className="sticky top-0 z-50">
@@ -236,7 +194,7 @@ export default function Navbar() {
             </div>
 
             <div className="flex-1 overflow-y-auto py-2">
-              {DRAWER.map((section) => {
+              {sections.map((section) => {
                 const links = section.title === 'Account' ? accountLinks : section.links
                 const open = openSections[section.title] === true
                 return (
