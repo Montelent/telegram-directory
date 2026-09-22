@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
+import OnlineBadge from '@/components/OnlineBadge'
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
@@ -19,9 +20,13 @@ export default function Navbar() {
     { href: '/ranking', label: 'Ranking' },
     { href: '/trending', label: 'Trending' },
     { href: '/top', label: 'Rating' },
+    { href: '/explore', label: 'Explore' },
   ]
 
   const mainLinks = [
+    { href: '/compare', label: 'Compare' },
+    { href: '/tag', label: 'Tags' },
+    { href: '/collections', label: 'Collections' },
     { href: '/search', label: 'Search' },
     { href: '/blog', label: 'Blog' },
     { href: '/submit', label: 'Add media' },
@@ -32,10 +37,7 @@ export default function Navbar() {
       <div className="bg-[#2d0808] text-[#f0d0d0] text-[11px]">
         <div className="container mx-auto px-4 h-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Online directory
-            </span>
+            <OnlineBadge className="text-emerald-300" />
             {topLinks.map((l) => (
               <Link
                 key={l.href}
@@ -76,7 +78,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+          <nav className="hidden lg:flex items-center gap-5 text-sm font-medium">
             {mainLinks.map((l) => (
               <Link
                 key={l.href}
@@ -126,7 +128,7 @@ export default function Navbar() {
           </nav>
 
           <button
-            className="md:hidden p-2 text-[#4a0e0e]"
+            className="lg:hidden p-2 text-[#4a0e0e]"
             onClick={() => setOpen(!open)}
             aria-label="Menu"
           >
@@ -141,7 +143,7 @@ export default function Navbar() {
         </div>
 
         {open && (
-          <div className="md:hidden border-t border-[#f0e0e0] bg-white">
+          <div className="lg:hidden border-t border-[#f0e0e0] bg-white">
             <nav className="container mx-auto px-4 py-3 flex flex-col gap-1 text-sm">
               {[...topLinks, ...mainLinks].map((l) => (
                 <Link

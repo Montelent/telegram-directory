@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
+import SiteFooter from '@/components/SiteFooter'
 import Providers from '@/components/Providers'
 import { HeaderScripts, FooterScripts, AdSlot } from '@/components/SiteScripts'
 
@@ -22,11 +23,12 @@ export default async function RootLayout({
       <head>
         <HeaderScripts />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased min-h-screen flex flex-col`}>
         <Providers>
           <Navbar />
           <AdSlot slot="header" />
-          {children}
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
           <FooterScripts />
         </Providers>
       </body>
