@@ -34,6 +34,21 @@ export default function AdminCategoriesPage() {
     load()
   }, [])
 
+  // Lock body scroll while modal is open, close on Escape
+  useEffect(() => {
+    if (!showForm) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowForm(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [showForm])
+
   function openCreate() {
     setEditing(null)
     setForm({ name: '', slug: '', description: '', icon: '' })
@@ -125,80 +140,6 @@ export default function AdminCategoriesPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {showForm && (
-          <div className="bg-white rounded-xl border p-6 mb-8 max-w-lg">
-            <h2 className="font-semibold mb-4">
-              {editing ? 'Edit Category' : 'Create Category'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Name *</label>
-                <input
-                  value={form.name}
-                  onChange={(e) => {
-                    const name = e.target.value
-                    setForm((f) => ({
-                      ...f,
-                      name,
-                      slug: f.slug || generateSlug(name),
-                    }))
-                  }}
-                  required
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Slug *</label>
-                <input
-                  value={form.slug}
-                  onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-                  required
-                  pattern="[a-z0-9-]+"
-                  className="w-full rounded-lg border px-3 py-2 text-sm font-mono"
-                />
-                <p className="text-xs text-slate-400 mt-1">Lowercase, numbers, hyphens only</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  rows={2}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Icon (emoji or text)</label>
-                <input
-                  value={form.icon}
-                  onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-                  placeholder="🚀"
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                />
-              </div>
-
-              {error && <p className="text-sm text-red-600">{error}</p>}
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="rounded-lg border px-4 py-2 text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
         {loading ? (
           <p className="text-slate-500">Loading...</p>
         ) : categories.length === 0 ? (
@@ -278,6 +219,112 @@ export default function AdminCategoriesPage() {
           </>
         )}
       </div>
+
+      {/* Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div
+            className="fixed inset-0 bg-black/50 transition-opacity"
+            onClick={() => setShowForm(false)}
+          />
+          <div
+            className="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[90vh] flex flex-col animate-[slideUp_0.2s_ease-out]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cat-modal-title"
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
+              <h2 id="cat-modal-title" className="font-semibold text-base">
+                {editing ? 'Edit Category' : 'Create Category'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="overflow-y-auto px-5 py-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Name *</label>
+                <input
+                  value={form.name}
+                  onChange={(e) => {
+                    const name = e.target.value
+                    setForm((f) => ({
+                      ...f,
+                      name,
+                      slug: f.slug || generateSlug(name),
+                    }))
+                  }}
+                  required
+                  autoFocus
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Slug *</label>
+                <input
+                  value={form.slug}
+                  onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+                  required
+                  pattern="[a-z0-9-]+"
+                  className="w-full rounded-lg border px-3 py-2 text-sm font-mono"
+                />
+                <p className="text-xs text-slate-400 mt-1">Lowercase, numbers, hyphens only</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  rows={2}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Icon (emoji or text)</label>
+                <input
+                  value={form.icon}
+                  onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
+                  placeholder="🚀"
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
+              </div>
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+            </form>
+
+            <div className="flex gap-2 px-5 py-4 border-t shrink-0">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={saving}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white font-medium disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="rounded-lg border px-4 py-2 text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes slideUp {
+          from { transform: translateY(16px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }
