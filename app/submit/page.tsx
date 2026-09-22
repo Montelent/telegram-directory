@@ -9,6 +9,22 @@ const TinyMCEEditor = dynamic(() => import('@/components/TinyMCEEditor'), { ssr:
 const LANGUAGES = ['English', 'Spanish', 'French', 'Arabic', 'Portuguese', 'German', 'Russian', 'Hindi', 'Chinese', 'Other']
 const COUNTRIES = ['Global', 'United States', 'Nigeria', 'United Kingdom', 'India', 'Brazil', 'Germany', 'France', 'Other']
 
+function mapLang(code: string | null | undefined): string {
+  if (!code) return 'English'
+  const c = code.toLowerCase()
+  if (c.startsWith('en')) return 'English'
+  if (c.startsWith('es') || c.startsWith('sp')) return 'Spanish'
+  if (c.startsWith('fr')) return 'French'
+  if (c.startsWith('ar')) return 'Arabic'
+  if (c.startsWith('pt')) return 'Portuguese'
+  if (c.startsWith('de')) return 'German'
+  if (c.startsWith('ru')) return 'Russian'
+  if (c.startsWith('hi')) return 'Hindi'
+  if (c.startsWith('zh') || c.startsWith('cn')) return 'Chinese'
+  const hit = LANGUAGES.find((l) => l.toLowerCase() === c)
+  return hit || 'Other'
+}
+
 export default function SubmitPage() {
   const [link, setLink] = useState('')
   const [step, setStep] = useState<'link' | 'form' | 'done'>('link')
@@ -67,16 +83,18 @@ export default function SubmitPage() {
       setShortDesc(data.shortDesc || '')
       setLongDesc(data.longDesc || data.shortDesc || '')
       setPhotoUrl(data.photoUrl || null)
-      setMemberCount(data.memberCount ?? null)
+      setMemberCount(typeof data.memberCount === 'number' ? data.memberCount : null)
       if (data.type === 'GROUP' || data.type === 'CHANNEL') setType(data.type)
+      if (data.language) setLanguage(mapLang(data.language))
+      if (data.isNsfw) setNsfw(true)
 
-      // Auto-suggest tags from hashtags in description
       const hashTags = String(data.shortDesc || data.longDesc || '').match(/#[\w]+/g)
       if (hashTags?.length) {
         setTags([...new Set(hashTags.map((t: string) => t.replace(/^#/, '')))].slice(0, 5).join(', '))
       }
 
-      if (data.warning) setMessage(data.warning)
+      const hints = [data.warning, data.note].filter(Boolean).join(' ')
+      if (hints) setMessage(hints)
       setStep('form')
       setStatus('idle')
     } catch {
@@ -106,13 +124,9 @@ export default function SubmitPage() {
           country,
           isNsfw: nsfw,
           wantFeature: feature,
-          notes: [
-            `Category: ${category}`,
-            photoUrl ? `photo:${photoUrl}` : '',
-            memberCount != null ? `members:${memberCount}` : '',
-          ]
-            .filter(Boolean)
-            .join(' | '),
+          memberCount,
+          photoUrl,
+          notes: `Category: ${category}`,
         }),
       })
       const data = await res.json()
@@ -167,7 +181,9 @@ export default function SubmitPage() {
         {step === 'done' && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-emerald-800">
             <p className="font-semibold">Saved to database</p>
-            <p className="text-sm mt-1">Pending admin review.</p>
+            <p className="text-sm mt-1">
+              Pending admin review. After approval, ranks use subscriber count vs other listings.
+            </p>
             <button
               type="button"
               onClick={() => {
@@ -184,7 +200,7 @@ export default function SubmitPage() {
 
         {step === 'link' && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Media&apos;s Link</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Media's Link</label>
             <input
               value={link}
               onChange={(e) => setLink(e.target.value)}
@@ -199,7 +215,9 @@ export default function SubmitPage() {
             >
               ☁ {status === 'fetching' ? 'Fetching…' : 'Fetch'}
             </button>
-            <p className="text-xs text-slate-400 mt-2">Enter your Telegram media link</p>
+            <p className="text-xs text-slate-400 mt-2">
+              For full subscriber counts, add a telegramchannels.me API key in Admin → Integrations.
+            </p>
             {status === 'error' && <p className="text-sm text-red-600 mt-2">{message}</p>}
           </div>
         )}
@@ -219,7 +237,7 @@ export default function SubmitPage() {
                 <p className="font-semibold text-sm text-slate-900 truncate">{title || username}</p>
                 <p className="text-xs text-slate-400">
                   @{username}
-                  {memberCount != null ? ` · ${memberCount.toLocaleString()} members` : ''}
+                  {memberCount != null ? ` · ${memberCount.toLocaleString()} members` : ' · members unknown'}
                 </p>
               </div>
             </div>
@@ -242,7 +260,6 @@ export default function SubmitPage() {
                   required
                   className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
                 />
-                <p className="text-[11px] text-slate-400 mt-0.5">{title.length}/120 · from Telegram title</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700">Short Description</label>
@@ -252,9 +269,7 @@ export default function SubmitPage() {
                   maxLength={170}
                   rows={4}
                   className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  placeholder="Used in search results and Google snippets."
                 />
-                <p className="text-[11px] text-slate-400 mt-0.5">{shortDesc.length}/170 · from Telegram about</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700">Tags</label>
@@ -262,9 +277,7 @@ export default function SubmitPage() {
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  placeholder="udemy, coupon, courses"
                 />
-                <p className="text-[11px] text-slate-400 mt-0.5">Auto-filled from #hashtags when found</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700 mb-1 block">Long Description</label>
@@ -275,7 +288,6 @@ export default function SubmitPage() {
             <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
               <div>
                 <h2 className="font-semibold text-slate-900">Classification</h2>
-                <p className="text-xs text-slate-400">Language, country, and category</p>
               </div>
               <div>
                 <label className="text-sm font-medium">Type</label>
@@ -311,6 +323,7 @@ export default function SubmitPage() {
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
+                <p className="text-[11px] text-slate-400 mt-0.5">Not provided by Telegram — choose manually</p>
               </div>
               <div>
                 <label className="text-sm font-medium">Category</label>
@@ -327,18 +340,11 @@ export default function SubmitPage() {
               </div>
               <label className="flex items-start gap-2 text-sm pt-1">
                 <input type="checkbox" checked={nsfw} onChange={(e) => setNsfw(e.target.checked)} className="mt-0.5" />
-                <span>
-                  <span className="font-medium">Mark as NSFW</span>
-                  <span className="block text-xs text-slate-400">Not safe for work or family.</span>
-                </span>
+                <span className="font-medium">Mark as NSFW</span>
               </label>
             </section>
 
             <section className="bg-amber-50/80 rounded-2xl border border-amber-200 p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-amber-600">⭐</span>
-                <h2 className="font-semibold text-slate-900">Feature (optional)</h2>
-              </div>
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" checked={feature} onChange={(e) => setFeature(e.target.checked)} className="mt-0.5" />
                 <span>
