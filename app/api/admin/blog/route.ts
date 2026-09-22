@@ -33,8 +33,10 @@ const schema = z.object({
   slug: z.string().min(1),
   excerpt: z.string().optional().nullable(),
   content: z.string().default(''),
+  coverImage: z.string().optional().nullable(),
   seoTitle: z.string().optional().nullable(),
   seoDescription: z.string().optional().nullable(),
+  seoJsonLd: z.string().optional().nullable(),
   focusKeyword: z.string().optional().nullable(),
   canonicalUrl: z.string().optional().nullable(),
   robots: z.string().optional().nullable(),
@@ -54,15 +56,6 @@ export async function POST(req: NextRequest) {
 
     const seoTitle = data.seoTitle || data.title
     const seoDescription = data.seoDescription || data.excerpt || ''
-    const seoJsonLd = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'BlogPosting',
-      headline: seoTitle,
-      description: seoDescription,
-      keywords: data.focusKeyword || undefined,
-      mainEntityOfPage: data.canonicalUrl || undefined,
-      datePublished: data.published ? new Date().toISOString() : undefined,
-    })
 
     const post = await prisma.blogPost.create({
       data: {
@@ -70,9 +63,19 @@ export async function POST(req: NextRequest) {
         slug: data.slug,
         excerpt: data.excerpt,
         content: data.content,
+        coverImage: data.coverImage,
         seoTitle,
         seoDescription,
-        seoJsonLd,
+        // Client (BlogSeoPanel) builds the full @graph JSON-LD document.
+        // Fall back to a minimal one only if the client somehow sent nothing.
+        seoJsonLd:
+          data.seoJsonLd ||
+          JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            headline: seoTitle,
+            description: seoDescription,
+          }),
         focusKeyword: data.focusKeyword,
         canonicalUrl: data.canonicalUrl,
         robots: data.robots || 'index,follow',
