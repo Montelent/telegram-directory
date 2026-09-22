@@ -27,7 +27,7 @@ export default function DashboardSettingsPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [notifs, setNotifs] = useState<Notifs>({
     comments: true,
     mediaApproved: true,
@@ -62,7 +62,7 @@ export default function DashboardSettingsPage() {
   async function save() {
     setErr('')
     setMsg('')
-    if (password && password !== confirm) {
+    if (password && password !== confirmPassword) {
       setErr('Passwords do not match')
       return
     }
@@ -88,7 +88,7 @@ export default function DashboardSettingsPage() {
       } else {
         setMsg('Settings updated.')
         setPassword('')
-        setConfirm('')
+        setConfirmPassword('')
       }
     } catch {
       setErr('Network error')
@@ -97,18 +97,18 @@ export default function DashboardSettingsPage() {
   }
 
   async function deleteAccount() {
-    if (!confirm('Delete your account permanently? This cannot be undone.')) return
-    if (!confirm('Are you sure? All your data will be removed.')) return
+    if (!window.confirm('Delete your account permanently? This cannot be undone.')) return
+    if (!window.confirm('Are you sure? All your data will be removed.')) return
     try {
       const res = await fetch('/api/user/settings', { method: 'DELETE' })
       if (res.ok) {
         await signOut({ callbackUrl: '/' })
       } else {
         const data = await res.json()
-        alert(data.error || 'Delete failed')
+        window.alert(data.error || 'Delete failed')
       }
     } catch {
-      alert('Network error')
+      window.alert('Network error')
     }
   }
 
@@ -125,7 +125,6 @@ export default function DashboardSettingsPage() {
       <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
       <p className="text-sm text-slate-500 -mt-2">Profile, notifications, and account.</p>
 
-      {/* Profile */}
       <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
         <div className="flex items-center gap-2">
           <span className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-lg">👤</span>
@@ -161,21 +160,20 @@ export default function DashboardSettingsPage() {
             placeholder="password"
             className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-slate-50"
           />
-          <p className="text-[11px] text-slate-400 mt-1">Leave it empty if you don&apos;t want to change it.</p>
+          <p className="text-[11px] text-slate-400 mt-1">Leave it empty if you don't want to change it.</p>
         </div>
         <div>
           <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Confirm password</label>
           <input
             type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="confirm password"
             className="w-full mt-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-slate-50"
           />
         </div>
       </section>
 
-      {/* Notifications */}
       <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-1">
         <div className="flex items-center gap-2 mb-3">
           <span className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-lg">🔔</span>
@@ -225,7 +223,6 @@ export default function DashboardSettingsPage() {
         {saving ? 'Saving…' : 'Update'}
       </button>
 
-      {/* Delete */}
       <section className="bg-white rounded-2xl border border-red-100 shadow-sm p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-2">
           <span className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-lg">🗑</span>
