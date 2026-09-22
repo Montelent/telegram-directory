@@ -8,6 +8,7 @@ import Providers from '@/components/Providers'
 import { HeaderScripts, FooterScripts, AdSlot } from '@/components/SiteScripts'
 import { getSiteSettings } from '@/lib/site-settings'
 import { buildPalette, paletteToCss } from '@/lib/theme'
+import { parseTopLinks, parseDrawerSections } from '@/lib/menu'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,6 +26,8 @@ export default async function RootLayout({
   const settings = await getSiteSettings()
   const palette = buildPalette(settings.color_primary, settings.color_accent)
   const themeCss = paletteToCss(palette)
+  const topLinks = parseTopLinks(settings.menu_header)
+  const drawerSections = parseDrawerSections(settings.menu_drawer_json)
 
   return (
     <html lang="en" className="overflow-x-hidden">
@@ -39,7 +42,7 @@ export default async function RootLayout({
         className={`${inter.className} antialiased min-h-screen flex flex-col overflow-x-hidden max-w-[100vw]`}
       >
         <Providers>
-          <Navbar />
+          <Navbar topLinks={topLinks} drawerSections={drawerSections} />
           <AdSlot slot="header" />
           <div className="flex-1 w-full min-w-0 overflow-x-hidden">{children}</div>
           <ConditionalFooter>
