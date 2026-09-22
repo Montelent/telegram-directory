@@ -8,7 +8,6 @@ interface Category {
   id: string
   name: string
   slug: string
-  _count?: { entities: number }
 }
 
 interface Entity {
@@ -19,7 +18,6 @@ interface Entity {
   type: 'GROUP' | 'CHANNEL'
   memberCount: number | null
   isVerified: boolean
-  photoUrl?: string | null
   category: { name: string; slug: string } | null
 }
 
@@ -34,7 +32,7 @@ function SearchContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const mode = searchParams.get('sort') || 'search' // members | rating | search
+  const mode = searchParams.get('sort') || 'search'
   const [q, setQ] = useState(searchParams.get('q') || '')
   const [type, setType] = useState(searchParams.get('type') || '')
   const [category, setCategory] = useState(searchParams.get('category') || '')
@@ -58,7 +56,7 @@ function SearchContent() {
       : mode === 'rating'
         ? 'Highest rated communities'
         : mode === 'trending'
-          ? 'Channels gaining attention'
+          ? 'Recently updated channels'
           : 'Find public Telegram groups and channels'
 
   async function fetchData(page = 1) {
@@ -68,7 +66,7 @@ function SearchContent() {
     if (type) params.set('type', type)
     if (category) params.set('category', category)
     if (mode === 'members' || mode === 'rating' || mode === 'trending') {
-      params.set('sort', mode === 'trending' ? 'members' : mode)
+      params.set('sort', mode)
     }
     params.set('page', String(page))
 
@@ -91,9 +89,10 @@ function SearchContent() {
   }
 
   useEffect(() => {
+    setQ(searchParams.get('q') || '')
     fetchData(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, category, mode])
+  }, [type, category, mode, searchParams])
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -103,7 +102,6 @@ function SearchContent() {
     if (category) params.set('category', category)
     if (mode !== 'search') params.set('sort', mode)
     router.push(`/search?${params.toString()}`)
-    fetchData(1)
   }
 
   return (
@@ -129,24 +127,40 @@ function SearchContent() {
             </button>
           </form>
           <div className="flex flex-wrap gap-2 mt-4 text-xs">
-            {[
-              { label: 'All', sort: '' },
-              { label: 'Ranking', sort: 'members' },
-              { label: 'Trending', sort: 'trending' },
-              { label: 'Rating', sort: 'rating' },
-            ].map((t) => (
-              <Link
-                key={t.label}
-                href={t.sort ? `/search?sort=${t.sort}` : '/search'}
-                className={`rounded-full px-3 py-1 transition ${
-                  (mode === 'search' && !t.sort) || mode === t.sort
-                    ? 'bg-white text-[#4a0e0e] font-semibold'
-                    : 'bg-white/15 hover:bg-white/25 text-white'
-                }`}
-              >
-                {t.label}
-              </Link>
-            ))}
+            <Link
+              href="/search"
+              className={`rounded-full px-3 py-1 transition ${
+                mode === 'search'
+                  ? 'bg-white text-[#4a0e0e] font-semibold'
+                  : 'bg-white/15 hover:bg-white/25 text-white'
+              }`}
+            >
+              Search
+            </Link>
+            <Link
+              href="/ranking"
+              className="rounded-full px-3 py-1 bg-white/15 hover:bg-white/25 text-white"
+            >
+              Ranking
+            </Link>
+            <Link
+              href="/trending"
+              className="rounded-full px-3 py-1 bg-white/15 hover:bg-white/25 text-white"
+            >
+              Trending
+            </Link>
+            <Link
+              href="/top"
+              className="rounded-full px-3 py-1 bg-white/15 hover:bg-white/25 text-white"
+            >
+              Rating
+            </Link>
+            <Link
+              href="/lucky"
+              className="rounded-full px-3 py-1 bg-[#c41e3a] hover:bg-[#a31830] text-white font-medium"
+            >
+              ✨ Feeling Lucky
+            </Link>
           </div>
         </div>
       </div>

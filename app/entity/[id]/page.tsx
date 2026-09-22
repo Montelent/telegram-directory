@@ -62,7 +62,6 @@ export default async function EntityByIdPage({ params }: Props) {
       ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
       : null
 
-  // Rankings (approximate from current directory)
   let globalRank: number | null = null
   let categoryRank: number | null = null
   let languageRank: number | null = null
@@ -106,7 +105,6 @@ export default async function EntityByIdPage({ params }: Props) {
     /* */
   }
 
-  // Related channels
   let related: typeof entity[] = []
   try {
     related = await prisma.entity.findMany({
@@ -164,10 +162,11 @@ export default async function EntityByIdPage({ params }: Props) {
       />
 
       <div className="container mx-auto px-3 sm:px-4 py-5 max-w-2xl">
-        <nav className="text-[11px] text-slate-500 mb-3 flex flex-wrap gap-1">
+        {/* Breadcrumbs: Home / Channels / Category / Title */}
+        <nav className="text-[11px] text-slate-500 mb-3 flex flex-wrap items-center gap-1" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-[#0088cc]">Home</Link>
           <span>/</span>
-          <Link href="/ranking" className="hover:text-[#0088cc]">Ranking</Link>
+          <Link href="/explore" className="hover:text-[#0088cc]">Channels</Link>
           {entity.category && (
             <>
               <span>/</span>
@@ -176,13 +175,13 @@ export default async function EntityByIdPage({ params }: Props) {
               </Link>
             </>
           )}
+          <span>/</span>
+          <span className="text-slate-700 truncate max-w-[12rem]">{entity.title}</span>
         </nav>
 
         <AdSlot slot="header" />
 
-        {/* ===== Hero card ===== */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          {/* Top: View Channel + mini stats */}
           <div className="px-4 sm:px-5 pt-4 flex items-center justify-between gap-3">
             <a
               href={telegramUrl}
@@ -206,7 +205,6 @@ export default async function EntityByIdPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Avatar + title */}
           <div className="px-4 sm:px-5 pt-5 pb-3 flex gap-4">
             {entity.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -250,7 +248,6 @@ export default async function EntityByIdPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Tags row */}
           <div className="px-4 sm:px-5 pb-3 flex flex-wrap gap-1.5">
             {entity.category && (
               <Link
@@ -271,16 +268,12 @@ export default async function EntityByIdPage({ params }: Props) {
               </span>
             )}
             {tags.map((t) => (
-              <span
-                key={t}
-                className="text-[11px] rounded-full bg-blue-50 text-blue-700 px-2.5 py-1"
-              >
+              <span key={t} className="text-[11px] rounded-full bg-blue-50 text-blue-700 px-2.5 py-1">
                 #{t}
               </span>
             ))}
           </div>
 
-          {/* Description by AI / short */}
           {(shortDesc || longDesc) && (
             <div className="mx-4 sm:mx-5 mb-4 rounded-xl bg-[#f7f8fa] border border-slate-100 px-4 py-3">
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">
@@ -292,11 +285,8 @@ export default async function EntityByIdPage({ params }: Props) {
             </div>
           )}
 
-          {/* Rankings grid */}
           <div className="px-4 sm:px-5 pb-4">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">
-              Rankings
-            </p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Rankings</p>
             <div className="grid grid-cols-2 gap-2">
               <RankCard
                 label="Global Rank"
@@ -313,25 +303,15 @@ export default async function EntityByIdPage({ params }: Props) {
                 value={categoryRank != null ? `#${categoryRank}` : '—'}
                 sub={entity.category?.name}
               />
-              <RankCard
-                label="Members"
-                value={formatFull(entity.memberCount)}
-                sub="subscribers"
-              />
+              <RankCard label="Members" value={formatFull(entity.memberCount)} sub="subscribers" />
             </div>
           </div>
 
-          {/* Subscribers block */}
           <div className="mx-4 sm:mx-5 mb-4 rounded-xl border border-slate-100 px-4 py-3">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                Subscribers
-              </p>
-              <p className="text-sm font-bold text-slate-800">
-                {formatFull(entity.memberCount)}
-              </p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Subscribers</p>
+              <p className="text-sm font-bold text-slate-800">{formatFull(entity.memberCount)}</p>
             </div>
-            {/* Decorative sparkline */}
             <div className="h-14 flex items-end gap-0.5 opacity-60">
               {Array.from({ length: 24 }).map((_, i) => {
                 const h = 20 + ((i * 17 + (entity.memberCount || 10)) % 40)
@@ -344,12 +324,8 @@ export default async function EntityByIdPage({ params }: Props) {
                 )
               })}
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">
-              Chart is illustrative until historical stats are synced via API.
-            </p>
           </div>
 
-          {/* Rate this media */}
           <div className="mx-4 sm:mx-5 mb-4 rounded-xl border border-slate-100 px-4 py-3 flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Rate</p>
@@ -357,9 +333,7 @@ export default async function EntityByIdPage({ params }: Props) {
                 {avgRating != null ? (
                   <>
                     <span className="text-amber-400">★</span> {avgRating.toFixed(2)}{' '}
-                    <span className="text-slate-400 font-normal text-xs">
-                      ({reviews.length})
-                    </span>
+                    <span className="text-slate-400 font-normal text-xs">({reviews.length})</span>
                   </>
                 ) : (
                   'No ratings yet'
@@ -369,11 +343,8 @@ export default async function EntityByIdPage({ params }: Props) {
             <div className="text-amber-400 text-lg tracking-tight">★★★★★</div>
           </div>
 
-          {/* About */}
           <div className="px-4 sm:px-5 pb-5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">
-              About
-            </p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">About</p>
             <div className="text-sm text-slate-600 leading-relaxed space-y-2">
               {longDesc ? (
                 <div
@@ -389,16 +360,7 @@ export default async function EntityByIdPage({ params }: Props) {
               ) : (
                 <p className="text-slate-400">No long description yet.</p>
               )}
-              {entity.username && (
-                <p className="text-xs text-slate-400 pt-1">
-                  Official link:{' '}
-                  <a href={telegramUrl} className="text-[#0088cc] hover:underline" target="_blank" rel="noreferrer">
-                    t.me/{entity.username}
-                  </a>
-                </p>
-              )}
             </div>
-
             <a
               href={telegramUrl}
               target="_blank"
@@ -410,12 +372,10 @@ export default async function EntityByIdPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Attention */}
         <div className="mt-3 rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-[11px] text-amber-900">
           <strong>Attention:</strong> Do your own research before trusting content or sending money.
         </div>
 
-        {/* Reviews */}
         <div className="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
           <h2 className="font-bold text-slate-900 mb-3">Comments</h2>
           <ReviewSection
@@ -432,7 +392,6 @@ export default async function EntityByIdPage({ params }: Props) {
           />
         </div>
 
-        {/* Related */}
         {related.length > 0 && (
           <div className="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
             <h2 className="font-bold text-slate-900 mb-3">Telegram channels you may like</h2>

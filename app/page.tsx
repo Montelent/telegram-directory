@@ -38,7 +38,6 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#faf4f4]">
-      {/* Hero */}
       <section className="relative overflow-hidden border-b border-[#f0e0e0]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#2d0808] via-[#4a0e0e] to-[#8b1a1a]" />
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_#c41e3a_0%,_transparent_50%)]" />
@@ -75,25 +74,25 @@ export default async function HomePage() {
 
           <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm">
             <Link
-              href="/search?sort=members"
+              href="/ranking"
               className="rounded-full bg-white/10 hover:bg-white/20 text-white px-4 py-1.5 backdrop-blur transition"
             >
               Ranking
             </Link>
             <Link
-              href="/search"
+              href="/trending"
               className="rounded-full bg-white/10 hover:bg-white/20 text-white px-4 py-1.5 backdrop-blur transition"
             >
               Trending
             </Link>
             <Link
-              href="/search?sort=rating"
+              href="/top"
               className="rounded-full bg-white/10 hover:bg-white/20 text-white px-4 py-1.5 backdrop-blur transition"
             >
               Rating
             </Link>
             <Link
-              href="/search"
+              href="/lucky"
               className="rounded-full bg-[#c41e3a] hover:bg-[#a31830] text-white px-4 py-1.5 transition font-medium"
             >
               ✨ I&apos;m Feeling Lucky
@@ -102,7 +101,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Stats strip */}
       <section className="bg-white border-b border-[#f0e0e0]">
         <div className="container mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div>
@@ -124,17 +122,14 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Featured */}
       <section className="container mx-auto px-4 py-12">
         <div className="flex items-end justify-between mb-6">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#c41e3a] mb-1">
-              Featured
-            </p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#c41e3a] mb-1">Featured</p>
             <h2 className="text-2xl font-bold text-[#2d0808]">Top channels & groups</h2>
           </div>
-          <Link href="/search" className="text-sm font-medium text-[#8b1a1a] hover:underline">
-            View all →
+          <Link href="/ranking" className="text-sm font-medium text-[#8b1a1a] hover:underline">
+            View ranking →
           </Link>
         </div>
 
@@ -175,9 +170,7 @@ export default async function HomePage() {
                   <h3 className="font-semibold text-[#2d0808] mt-0.5 group-hover:text-[#8b1a1a] truncate">
                     {entity.title}
                   </h3>
-                  {entity.username && (
-                    <p className="text-xs text-[#8b1a1a]">@{entity.username}</p>
-                  )}
+                  {entity.username && <p className="text-xs text-[#8b1a1a]">@{entity.username}</p>}
                   <div className="flex gap-2 mt-1 text-[11px] text-[#6b5555]">
                     {entity.memberCount != null && (
                       <span>{formatCount(entity.memberCount)} members</span>
@@ -191,14 +184,11 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* Categories */}
       {categories.length > 0 && (
         <section className="container mx-auto px-4 pb-12">
           <div className="flex items-end justify-between mb-6">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#c41e3a] mb-1">
-                Browse
-              </p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[#c41e3a] mb-1">Browse</p>
               <h2 className="text-2xl font-bold text-[#2d0808]">Categories</h2>
             </div>
           </div>
@@ -211,22 +201,17 @@ export default async function HomePage() {
               >
                 <span className="text-xl">{cat.icon || '📁'}</span>
                 <p className="font-semibold text-[#2d0808] mt-1 text-sm">{cat.name}</p>
-                <p className="text-[11px] text-[#6b5555]">
-                  {cat._count.entities} entries
-                </p>
+                <p className="text-[11px] text-[#6b5555]">{cat._count.entities} entries</p>
               </Link>
             ))}
           </div>
         </section>
       )}
 
-      {/* Blog grid */}
       <section className="container mx-auto px-4 pb-12">
         <div className="flex items-end justify-between mb-6">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#c41e3a] mb-1">
-              From the blog
-            </p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#c41e3a] mb-1">From the blog</p>
             <h2 className="text-2xl font-bold text-[#2d0808]">Latest articles</h2>
           </div>
           <Link href="/blog" className="text-sm font-medium text-[#8b1a1a] hover:underline">
@@ -262,11 +247,6 @@ export default async function HomePage() {
                   {post.excerpt && (
                     <p className="text-sm text-[#6b5555] mt-1 line-clamp-2 flex-1">{post.excerpt}</p>
                   )}
-                  {post.publishedAt && (
-                    <p className="text-[11px] text-[#6b5555] mt-3">
-                      {new Date(post.publishedAt).toLocaleDateString()}
-                    </p>
-                  )}
                 </div>
               </Link>
             ))}
@@ -274,7 +254,6 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* CTA band */}
       <section className="border-t border-[#f0e0e0] bg-gradient-to-r from-[#2d0808] via-[#4a0e0e] to-[#8b1a1a]">
         <div className="container mx-auto px-4 py-12 text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Add your media for free</h2>
@@ -297,36 +276,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      <footer className="bg-[#1a0808] text-[#c4a0a0] py-10 text-sm">
-        <div className="container mx-auto px-4 grid sm:grid-cols-3 gap-8">
-          <div>
-            <p className="font-bold text-white mb-2">Telegram Directory</p>
-            <p className="text-xs leading-relaxed">
-              Discover public Telegram channels and groups. Not affiliated with Telegram.
-            </p>
-          </div>
-          <div>
-            <p className="font-semibold text-white mb-2">Explore</p>
-            <div className="flex flex-col gap-1 text-xs">
-              <Link href="/search" className="hover:text-white">Search</Link>
-              <Link href="/blog" className="hover:text-white">Blog</Link>
-              <Link href="/submit" className="hover:text-white">Submit</Link>
-            </div>
-          </div>
-          <div>
-            <p className="font-semibold text-white mb-2">Account</p>
-            <div className="flex flex-col gap-1 text-xs">
-              <Link href="/login" className="hover:text-white">Log in</Link>
-              <Link href="/signup" className="hover:text-white">Sign up</Link>
-              <Link href="/admin" className="hover:text-white">Admin</Link>
-            </div>
-          </div>
-        </div>
-        <p className="container mx-auto px-4 mt-8 pt-6 border-t border-white/10 text-[11px] text-center">
-          © {new Date().getFullYear()} Telegram Directory. All rights reserved.
-        </p>
-      </footer>
     </main>
   )
 }
