@@ -7,13 +7,10 @@ import { useSession, signOut } from 'next-auth/react'
 import OnlineBadge from '@/components/OnlineBadge'
 
 type LinkItem = { href: string; label: string; icon: string }
-type Section =
-  | { kind: 'links'; title: string; links: LinkItem[] }
-  | { kind: 'accordion'; title: string; icon: string; links: LinkItem[] }
+type Section = { title: string; icon: string; links: LinkItem[] }
 
 const DRAWER: Section[] = [
   {
-    kind: 'accordion',
     title: 'Media',
     icon: 'M',
     links: [
@@ -23,8 +20,8 @@ const DRAWER: Section[] = [
     ],
   },
   {
-    kind: 'links',
     title: 'Discover',
+    icon: 'D',
     links: [
       { href: '/ranking', label: 'Ranking', icon: 'R' },
       { href: '/trending', label: 'Trending', icon: 'T' },
@@ -34,8 +31,8 @@ const DRAWER: Section[] = [
     ],
   },
   {
-    kind: 'links',
     title: 'Tools',
+    icon: 'T',
     links: [
       { href: '/search', label: 'Search', icon: '?' },
       { href: '/compare', label: 'Compare', icon: '=' },
@@ -44,19 +41,25 @@ const DRAWER: Section[] = [
     ],
   },
   {
-    kind: 'links',
     title: 'Content',
+    icon: 'W',
     links: [
-      { href: '/blog', label: 'Blog', icon: 'W' },
+      { href: '/blog', label: 'Blog', icon: 'B' },
       { href: '/submit', label: 'Add media', icon: '+' },
     ],
+  },
+  {
+    title: 'Account',
+    icon: 'A',
+    links: [], // filled dynamically
   },
 ]
 
 export default function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ Media: true })
+  /** All sections start collapsed until user expands */
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
   const pathname = usePathname()
   const { data: session, status } = useSession()
 
@@ -82,20 +85,15 @@ export default function Navbar() {
     return pathname === href || Boolean(pathname?.startsWith(href + '/'))
   }
 
-  function NavLink({ l }: { l: LinkItem }) {
-    const active = linkActive(l.href)
-    const cls = active
-      ? 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium bg-slate-100 text-[#1a2332]'
-      : 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50'
-    return (
-      <Link href={l.href} onClick={closeDrawer} className={cls}>
-        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold">
-          {l.icon}
-        </span>
-        {l.label}
-      </Link>
-    )
-  }
+  const accountLinks: LinkItem[] = isUser
+    ? [
+        { href: '/dashboard', label: 'Dashboard', icon: 'D' },
+        { href: '/dashboard/settings', label: 'Settings', icon: 'S' },
+      ]
+    : [
+        { href: '/login', label: 'Log in', icon: 'L' },
+        { href: '/signup', label: 'Sign up', icon: '+' },
+      ]
 
   return (
     <header className="sticky top-0 z-50">
@@ -237,102 +235,61 @@ export default function Navbar() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-3">
+            <div className="flex-1 overflow-y-auto py-2">
               {DRAWER.map((section) => {
-                if (section.kind === 'accordion') {
-                  const open = openSections[section.title] !== false
-                  return (
-                    <div key={section.title} className="mb-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleSection(section.title)}
-                        className="w-full flex items-center justify-between px-4 py-2.5 text-left"
-                      >
-                        <span className="flex items-center gap-3 text-sm font-semibold text-slate-800">
-                          <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold">
-                            {section.icon}
-                          </span>
-                          {section.title}
-                        </span>
-                        <span className="text-slate-400 text-xs">{open ? '▲' : '▼'}</span>
-                      </button>
-                      {open && (
-                        <nav className="px-2 pb-2 pl-4 space-y-0.5 border-l-2 border-slate-100 ml-7">
-                          {section.links.map((l) => (
-                            <NavLink key={l.href} l={l} />
-                          ))}
-                        </nav>
-                      )}
-                    </div>
-                  )
-                }
-
+                const links = section.title === 'Account' ? accountLinks : section.links
+                const open = openSections[section.title] === true
                 return (
-                  <div key={section.title} className="mb-4">
-                    <p className="px-4 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      {section.title}
-                    </p>
-                    <nav className="px-2">
-                      {section.links.map((l) => (
-                        <NavLink key={l.href} l={l} />
-                      ))}
-                    </nav>
+                  <div key={section.title} className="border-b border-slate-50">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(section.title)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50"
+                    >
+                      <span className="flex items-center gap-3 text-sm font-semibold text-slate-800">
+                        <span className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
+                          {section.icon}
+                        </span>
+                        {section.title}
+                      </span>
+                      <span className="text-slate-400 text-xs font-bold">{open ? '▲' : '▼'}</span>
+                    </button>
+                    {open && (
+                      <nav className="px-3 pb-3 space-y-0.5">
+                        {links.map((l) => {
+                          const active = linkActive(l.href)
+                          const cls = active
+                            ? 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium bg-slate-100 text-[#1a2332]'
+                            : 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50'
+                          return (
+                            <Link key={l.href} href={l.href} onClick={closeDrawer} className={cls}>
+                              <span className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center text-xs font-bold">
+                                {l.icon}
+                              </span>
+                              {l.label}
+                            </Link>
+                          )
+                        })}
+                        {section.title === 'Account' && isUser && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              closeDrawer()
+                              signOut({ callbackUrl: '/' })
+                            }}
+                            className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                          >
+                            <span className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-xs font-bold">
+                              X
+                            </span>
+                            Sign out
+                          </button>
+                        )}
+                      </nav>
+                    )}
                   </div>
                 )
               })}
-
-              <div className="mb-4">
-                <p className="px-4 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Account
-                </p>
-                <nav className="px-2">
-                  {isUser ? (
-                    <>
-                      <Link
-                        href="/dashboard"
-                        onClick={closeDrawer}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        href="/dashboard/settings"
-                        onClick={closeDrawer}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        Settings
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          closeDrawer()
-                          signOut({ callbackUrl: '/' })
-                        }}
-                        className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                      >
-                        Sign out
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        href="/login"
-                        onClick={closeDrawer}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        Log in
-                      </Link>
-                      <Link
-                        href="/signup"
-                        onClick={closeDrawer}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        Sign up
-                      </Link>
-                    </>
-                  )}
-                </nav>
-              </div>
             </div>
           </aside>
         </div>

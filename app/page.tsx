@@ -5,13 +5,22 @@ export const dynamic = 'force-dynamic'
 
 function formatCount(n: number | null | undefined) {
   if (n == null) return '—'
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M'
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
   return String(n)
 }
 
+async function getSetting(key: string) {
+  try {
+    const row = await prisma.siteSetting.findUnique({ where: { key } })
+    return row?.value || ''
+  } catch {
+    return ''
+  }
+}
+
 export default async function HomePage() {
-  const [categories, featured, totalApproved, blogPosts] = await Promise.all([
+  const [categories, featured, totalApproved, userCount, blogPosts] = await Promise.all([
     prisma.category.findMany({
       orderBy: { name: 'asc' },
       take: 12,
@@ -26,6 +35,7 @@ export default async function HomePage() {
       take: 12,
     }),
     prisma.entity.count({ where: { status: 'APPROVED' } }),
+    prisma.user.count().catch(() => 0),
     prisma.blogPost
       .findMany({
         where: { published: true },
@@ -35,6 +45,36 @@ export default async function HomePage() {
       })
       .catch(() => [] as any[]),
   ])
+
+  const [
+    fakeViews,
+    fakeUsers,
+    fakeMedia,
+    viewsLabel,
+    usersLabel,
+    mediaLabel,
+    useFake,
+    whyTitle,
+    whySubtitle,
+  ] = await Promise.all([
+    getSetting('stats_views_display'),
+    getSetting('stats_users_display'),
+    getSetting('stats_media_display'),
+    getSetting('stats_views_label'),
+    getSetting('stats_users_label'),
+    getSetting('stats_media_label'),
+    getSetting('stats_use_fake'),
+    getSetting('home_why_title'),
+    getSetting('home_why_subtitle'),
+  ])
+
+  const showFake = useFake === '1'
+
+  const displayViews = showFake && fakeViews ? fakeViews : '—'
+  const displayUsers =
+    showFake && fakeUsers ? fakeUsers : userCount > 0 ? userCount.toLocaleString() : '0'
+  const displayMedia =
+    showFake && fakeMedia ? fakeMedia : totalApproved > 0 ? totalApproved.toLocaleString() : '0'
 
   return (
     <main className="min-h-screen bg-[#faf4f4]">
@@ -95,30 +135,100 @@ export default async function HomePage() {
               href="/lucky"
               className="rounded-full bg-[#c41e3a] hover:bg-[#a31830] text-white px-4 py-1.5 transition font-medium"
             >
-              ✨ I&apos;m Feeling Lucky
+              I&apos;m Feeling Lucky
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="bg-white border-b border-[#f0e0e0]">
-        <div className="container mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-          <div>
-            <p className="text-2xl font-bold text-[#4a0e0e]">{totalApproved.toLocaleString()}</p>
-            <p className="text-xs text-[#6b5555] uppercase tracking-wide mt-0.5">Listed media</p>
+      {/* Why add + counters (telegramchannels-style) */}
+      <section className="bg-white border-b border-slate-100">
+        <div className="container mx-auto px-4 py-12 sm:py-16 max-w-2xl text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#1a2332] mb-3">
+            {whyTitle || 'Why Add Your Channel or Bot to Our Directory?'}
+          </h2>
+          <p className="text-sm sm:text-base text-slate-500 mb-10">
+            {whySubtitle ||
+              'A quality-first Telegram directory with real traffic, daily updates, and tools built for channel owners.'}
+          </p>
+
+          <div className="text-left space-y-8 mb-12">
+            <div className="flex gap-4">
+              <span className="text-2xl shrink-0">👥</span>
+              <div>
+                <h3 className="font-semibold text-[#1a2332] mb-1">Reach more subscribers</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  List on a directory people actually use. We help users discover channels, groups,
+                  and bots — and we only keep active, quality listings.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <span className="text-2xl shrink-0">📈</span>
+              <div>
+                <h3 className="font-semibold text-[#1a2332] mb-1">Track your growth</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  We check your subscriber count and turn it into growth charts you can follow from
+                  your panel.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <span className="text-2xl shrink-0">😊</span>
+              <div>
+                <h3 className="font-semibold text-[#1a2332] mb-1">Collect real user reviews</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Every channel gets its own rating page to share with your audience.{' '}
+                  <Link href="/top" className="text-[#0088cc] hover:underline">
+                    Top rated media
+                  </Link>
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <span className="text-2xl shrink-0">🔍</span>
+              <div>
+                <h3 className="font-semibold text-[#1a2332] mb-1">Get found on search engines</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Every channel has its own page, updated regularly and indexed by search engines
+                  like Google.
+                </p>
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#4a0e0e]">{categories.length}</p>
-            <p className="text-xs text-[#6b5555] uppercase tracking-wide mt-0.5">Categories</p>
+
+          <div className="space-y-6 mb-10">
+            <div>
+              <p className="text-4xl sm:text-5xl font-bold text-[#1a2332]">{displayViews}</p>
+              <p className="text-sm text-slate-500 mt-1">
+                {viewsLabel || 'Views per Month'}
+              </p>
+            </div>
+            <div>
+              <p className="text-4xl sm:text-5xl font-bold text-[#1a2332]">{displayUsers}</p>
+              <p className="text-sm text-slate-500 mt-1">
+                {usersLabel || 'Registered Users'}
+              </p>
+            </div>
+            <div>
+              <p className="text-4xl sm:text-5xl font-bold text-[#1a2332]">{displayMedia}</p>
+              <p className="text-sm text-slate-500 mt-1">
+                {mediaLabel || 'Listed Media'}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#4a0e0e]">{blogPosts.length > 0 ? blogPosts.length : '—'}</p>
-            <p className="text-xs text-[#6b5555] uppercase tracking-wide mt-0.5">Blog posts</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[#4a0e0e]">Free</p>
-            <p className="text-xs text-[#6b5555] uppercase tracking-wide mt-0.5">To list & browse</p>
-          </div>
+
+          <Link
+            href="/submit"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold px-8 py-3.5 text-sm shadow-sm transition"
+          >
+            + Add Your Media For Free
+          </Link>
+
+          <p className="mt-10 text-sm text-slate-500 italic max-w-md mx-auto leading-relaxed">
+            &quot;We list channels, groups, and bots, review each listing, and update media regularly.
+            We only list active, high-quality listings that have real value for users.&quot;
+          </p>
         </div>
       </section>
 
@@ -145,7 +255,7 @@ export default async function HomePage() {
             {featured.map((entity) => (
               <Link
                 key={entity.id}
-                href={`/entity/${entity.id}`}
+                href={'/entity/' + entity.id}
                 className="group bg-white rounded-2xl border border-[#f0e0e0] p-4 hover:border-[#c41e3a]/40 hover:shadow-md transition flex gap-3"
               >
                 {entity.photoUrl ? (
@@ -196,7 +306,7 @@ export default async function HomePage() {
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/category/${cat.slug}`}
+                href={'/category/' + cat.slug}
                 className="bg-white rounded-xl border border-[#f0e0e0] px-4 py-4 hover:border-[#c41e3a]/50 hover:shadow-sm transition"
               >
                 <span className="text-xl">{cat.icon || '📁'}</span>
@@ -228,7 +338,7 @@ export default async function HomePage() {
             {blogPosts.map((post: any) => (
               <Link
                 key={post.id}
-                href={`/blog/${post.slug}`}
+                href={'/blog/' + post.slug}
                 className="bg-white rounded-2xl border border-[#f0e0e0] overflow-hidden hover:border-[#c41e3a]/40 hover:shadow-md transition flex flex-col"
               >
                 {post.coverImage ? (
@@ -260,20 +370,12 @@ export default async function HomePage() {
           <p className="text-[#f0c8c8] text-sm max-w-lg mx-auto mb-6">
             List your channel or group. Get discovered by people searching for communities like yours.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/submit"
-              className="inline-flex justify-center rounded-xl bg-[#c41e3a] hover:bg-[#a31830] px-6 py-3 text-sm font-semibold text-white transition"
-            >
-              Submit a channel
-            </Link>
-            <Link
-              href="/signup"
-              className="inline-flex justify-center rounded-xl bg-white/10 hover:bg-white/20 px-6 py-3 text-sm font-semibold text-white transition"
-            >
-              Create account
-            </Link>
-          </div>
+          <Link
+            href="/submit"
+            className="inline-flex justify-center rounded-xl bg-[#c41e3a] hover:bg-[#a31830] px-6 py-3 text-sm font-semibold text-white transition"
+          >
+            Submit a channel
+          </Link>
         </div>
       </section>
     </main>
