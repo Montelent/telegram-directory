@@ -19,7 +19,6 @@ export default function AdminUsersPage() {
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState('')
 
-  // Edit modal
   const [edit, setEdit] = useState<UserRow | null>(null)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
@@ -80,7 +79,7 @@ export default function AdminUsersPage() {
     setSaving(true)
     setEditMsg('')
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         name: editName,
         email: editEmail,
         isActive: editActive,
@@ -104,7 +103,6 @@ export default function AdminUsersPage() {
         return
       }
 
-      // Optional extra adjust after set
       if (adjustUsd !== '') {
         const adj = parseFloat(adjustUsd)
         if (!Number.isNaN(adj) && adj !== 0) {
@@ -116,7 +114,6 @@ export default function AdminUsersPage() {
         }
       }
 
-      setEditMsg('Saved.')
       setEdit(null)
       load()
     } catch {
@@ -219,8 +216,7 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        u.isActive !== false
+                      className={`text-xs px-2 py-0.5 rounded-full ${\n                        u.isActive !== false
                           ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-red-100 text-red-800'
                       }`}
@@ -245,7 +241,8 @@ export default function AdminUsersPage() {
                       +$10
                     </button>
                     <button
-                      type="button"\n                      onClick={() => quickAdjust(u.id, -10)}
+                      type="button"
+                      onClick={() => quickAdjust(u.id, -10)}
                       className="text-xs text-amber-700 hover:underline"
                       title="Subtract $10"
                     >
@@ -266,7 +263,6 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Edit modal */}
       {edit && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5 space-y-4">
