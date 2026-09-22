@@ -6,51 +6,74 @@ import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import OnlineBadge from '@/components/OnlineBadge'
 
+const DRAWER_SECTIONS: { title: string; links: { href: string; label: string; icon: string }[] }[] =
+  [
+    {
+      title: 'Discover',
+      links: [
+        { href: '/ranking', label: 'Ranking', icon: '🏆' },
+        { href: '/trending', label: 'Trending', icon: '🔥' },
+        { href: '/top', label: 'Rating', icon: '⭐' },
+        { href: '/explore', label: 'Explore', icon: '🧭' },
+        { href: '/lucky', label: "I'm Feeling Lucky", icon: '✨' },
+      ],
+    },
+    {
+      title: 'Tools',
+      links: [
+        { href: '/search', label: 'Search', icon: '🔍' },
+        { href: '/compare', label: 'Compare', icon: '▥' },
+        { href: '/tag', label: 'Tags', icon: '#' },
+        { href: '/collections', label: 'Collections', icon: '📚' },
+      ],
+    },
+    {
+      title: 'Content',
+      links: [
+        { href: '/blog', label: 'Blog', icon: '✍️' },
+        { href: '/submit', label: 'Add media', icon: '➕' },
+      ],
+    },
+  ]
+
 export default function Navbar() {
-  const [open, setOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const pathname = usePathname()
   const { data: session, status } = useSession()
 
-  // Admin keeps its own shell — hide public navbar there only
   if (pathname?.startsWith('/admin')) return null
 
   const isUser = session && (session.user as any)?.role === 'user'
-  const onDashboard = pathname?.startsWith('/dashboard')
 
   const topLinks = [
     { href: '/ranking', label: 'Ranking' },
     { href: '/trending', label: 'Trending' },
     { href: '/top', label: 'Rating' },
-    { href: '/explore', label: 'Explore' },
   ]
 
-  const mainLinks = [
-    { href: '/compare', label: 'Compare' },
-    { href: '/tag', label: 'Tags' },
-    { href: '/collections', label: 'Collections' },
-    { href: '/search', label: 'Search' },
-    { href: '/blog', label: 'Blog' },
-    { href: '/submit', label: 'Add media' },
-  ]
+  function closeDrawer() {
+    setDrawerOpen(false)
+  }
 
   return (
     <header className="sticky top-0 z-50">
-      <div className="bg-[#2d0808] text-[#f0d0d0] text-[11px]">
-        <div className="container mx-auto px-4 h-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <OnlineBadge className="text-emerald-300" />
+      {/* Top bar */}
+      <div className="bg-[#1a2332] text-[#c8d0dc] text-[11px]">
+        <div className="container mx-auto px-3 sm:px-4 h-8 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 overflow-hidden">
+            <OnlineBadge className="text-emerald-300 shrink-0" />
             {topLinks.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className="hidden sm:inline hover:text-white transition"
+                className="hidden sm:inline hover:text-white transition shrink-0"
               >
                 {l.label}
               </Link>
             ))}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {status !== 'loading' && isUser ? (
               <Link href="/dashboard" className="hover:text-white">
                 Dashboard
@@ -69,50 +92,56 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="bg-white border-b border-[#f0e0e0] shadow-sm">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#c41e3a] to-[#4a0e0e] flex items-center justify-center text-white text-sm font-bold">
+      {/* Main bar */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="container mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-3">
+          <Link href="/" className="flex items-center gap-2 min-w-0" onClick={closeDrawer}>
+            <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#c41e3a] to-[#4a0e0e] flex items-center justify-center text-white text-sm font-bold shrink-0">
               TG
             </span>
-            <span className="font-bold text-[#2d0808] text-lg tracking-tight">
+            <span className="font-bold text-[#1a2332] text-base sm:text-lg tracking-tight truncate">
               Telegram Directory
             </span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-5 text-sm font-medium">
-            {mainLinks.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`transition ${
-                  pathname === l.href || pathname?.startsWith(l.href + '/')
-                    ? 'text-[#8b1a1a]'
-                    : 'text-[#5c4040] hover:text-[#8b1a1a]'
-                }`}
-              >
-                {l.label}
-              </Link>
-            ))}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Link
+              href="/search"
+              className="p-2 text-slate-600 hover:text-[#1a2332] rounded-lg"
+              aria-label="Search"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </Link>
 
-            {status === 'loading' ? null : isUser ? (
-              <div className="relative">
+            {status !== 'loading' && isUser && (
+              <div className="relative hidden sm:block">
                 <button
+                  type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="text-[#5c4040] hover:text-[#8b1a1a] font-medium"
+                  className="text-sm font-medium text-slate-600 hover:text-[#1a2332] px-2"
                 >
                   {session?.user?.name || session?.user?.email?.split('@')[0] || 'Account'} ▾
                 </button>
                 {userMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-52 bg-white border border-[#f0e0e0] rounded-xl shadow-lg z-50 py-1 text-sm">
-                      <Link href="/dashboard" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-[#faf4f4]">Dashboard</Link>
-                      <Link href="/dashboard/media" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-[#faf4f4]">Media list</Link>
-                      <Link href="/dashboard/settings" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-[#faf4f4]">Settings</Link>
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1 text-sm">
+                      <Link href="/dashboard" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-slate-50">Dashboard</Link>
+                      <Link href="/dashboard/settings" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-slate-50">Settings</Link>
                       <button
-                        onClick={() => { setUserMenuOpen(false); signOut({ callbackUrl: '/' }) }}
-                        className="w-full text-left px-4 py-2 text-[#c41e3a] hover:bg-[#faf4f4]"
+                        type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false)
+                          signOut({ callbackUrl: '/' })
+                        }}
+                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-slate-50"
                       >
                         Sign out
                       </button>
@@ -120,60 +149,133 @@ export default function Navbar() {
                   </>
                 )}
               </div>
-            ) : (
-              <Link
-                href="/signup"
-                className="rounded-lg bg-gradient-to-r from-[#8b1a1a] to-[#4a0e0e] px-4 py-1.5 text-white text-sm font-semibold hover:opacity-95"
-              >
-                Join free
-              </Link>
             )}
-          </nav>
 
-          <button
-            className="lg:hidden p-2 text-[#4a0e0e]"
-            onClick={() => setOpen(!open)}
-            aria-label="Menu"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {open ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-        </div>
-
-        {open && (
-          <div className="lg:hidden border-t border-[#f0e0e0] bg-white">
-            <nav className="container mx-auto px-4 py-3 flex flex-col gap-1 text-sm">
-              {[...topLinks, ...mainLinks].map((l) => (
-                <Link
-                  key={l.href + l.label}
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className="py-2 text-[#5c4040]"
-                >
-                  {l.label}
-                </Link>
-              ))}
-              {isUser ? (
-                <>
-                  <Link href="/dashboard" onClick={() => setOpen(false)} className="py-2">Dashboard</Link>
-                  <Link href="/dashboard/settings" onClick={() => setOpen(false)} className="py-2">Settings</Link>
-                  <button onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }) }} className="py-2 text-left text-[#c41e3a]">Sign out</button>
-                </>
-              ) : (
-                <>
-                  <Link href="/login" onClick={() => setOpen(false)} className="py-2">Log in</Link>
-                  <Link href="/signup" onClick={() => setOpen(false)} className="py-2 font-semibold text-[#8b1a1a]">Sign up</Link>
-                </>
-              )}
-            </nav>
+            {/* Hamburger — opens navigation drawer (all breakpoints) */}
+            <button
+              type="button"
+              className="p-2 text-[#1a2332] rounded-lg hover:bg-slate-100"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Navigation drawer */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/40" onClick={closeDrawer} />
+          <aside className="absolute inset-y-0 right-0 w-[min(100%,20rem)] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right">
+            <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100">
+              <span className="font-bold text-[#1a2332]">Menu</span>
+              <button
+                type="button"
+                onClick={closeDrawer}
+                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-3">
+              {DRAWER_SECTIONS.map((section) => (
+                <div key={section.title} className="mb-4">
+                  <p className="px-4 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    {section.title}
+                  </p>
+                  <nav className="px-2">
+                    {section.links.map((l) => (
+                      <Link
+                        key={l.href}
+                        href={l.href}
+                        onClick={closeDrawer}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${\n                          pathname === l.href || pathname?.startsWith(l.href + '/')
+                            ? 'bg-slate-100 text-[#1a2332]'
+                            : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-sm">
+                          {l.icon}
+                        </span>
+                        {l.label}
+                      </Link>
+                    ))}
+                  </nav>
+                </div>
+              ))}
+
+              <div className="mb-4">
+                <p className="px-4 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Account
+                </p>
+                <nav className="px-2">
+                  {isUser ? (
+                    <>
+                      <Link
+                        href="/dashboard"
+                        onClick={closeDrawer}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">📊</span>
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/dashboard/settings"
+                        onClick={closeDrawer}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">⚙</span>
+                        Settings
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          closeDrawer()
+                          signOut({ callbackUrl: '/' })
+                        }}
+                        className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                      >
+                        <span className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center">⎋</span>
+                        Sign out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        onClick={closeDrawer}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">🔑</span>
+                        Log in
+                      </Link>
+                      <Link
+                        href="/signup"
+                        onClick={closeDrawer}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">✨</span>
+                        Sign up
+                      </Link>
+                    </>
+                  )}
+                </nav>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
     </header>
   )
 }
