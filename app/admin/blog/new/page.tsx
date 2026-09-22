@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import TinyMCEEditor from '@/components/TinyMCEEditor'
-import BlogSeoPanel from '@/components/BlogSeoPanel'
+import BlogSeoPanel, { defaultSeoData, buildJsonLd, SeoData } from '@/components/BlogSeoPanel'
 
 function slugify(s: string) {
   return s
@@ -20,16 +20,14 @@ export default function NewBlogPostPage() {
   const [slug, setSlug] = useState('')
   const [excerpt, setExcerpt] = useState('')
   const [content, setContent] = useState('')
+  const [coverImage, setCoverImage] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
-  const [seoTitle, setSeoTitle] = useState('')
-  const [seoDescription, setSeoDescription] = useState('')
-  const [focusKeyword, setFocusKeyword] = useState('')
-  const [canonical, setCanonical] = useState('')
-  const [robots, setRobots] = useState('index,follow')
+  const [seo, setSeo] = useState<SeoData>(defaultSeoData)
   const [published, setPublished] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showSeoMobile, setShowSeoMobile] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/blog/categories')
@@ -46,6 +44,19 @@ export default function NewBlogPostPage() {
     setError('')
 
     const finalSlug = slug || slugify(title)
+    const seoJsonLd =
+      seo.jsonLdOverride ??
+      buildJsonLd({
+        data: seo,
+        title,
+        slug: finalSlug,
+        excerpt,
+        siteUrl: typeof window !== 'undefined' ? window.location.origin : '',
+        siteName: 'Site',
+        publishedAt: published ? new Date().toISOString() : null,
+        coverImage,
+      })
+
     const res = await fetch('/api/admin/blog', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -54,12 +65,14 @@ export default function NewBlogPostPage() {
         slug: finalSlug,
         excerpt,
         content,
+        coverImage: coverImage || null,
         categoryId: categoryId || null,
-        seoTitle: seoTitle || title,
-        seoDescription: seoDescription || excerpt,
-        focusKeyword,
-        canonicalUrl: canonical || null,
-        robots,
+        seoTitle: seo.seoTitle || title,
+        seoDescription: seo.seoDescription || excerpt,
+        seoJsonLd,
+        focusKeyword: seo.focusKeyword,
+        canonicalUrl: seo.canonical || null,
+        robots: seo.robots,
         published,
       }),
     })
@@ -79,7 +92,16 @@ export default function NewBlogPostPage() {
       <Link href="/admin/blog" className="text-sm text-blue-600 hover:underline">
         ← Blog
       </Link>
-      <h1 className="text-xl font-bold mt-2 mb-6">New post</h1>
+      <div className="flex items-center justify-between mt-2 mb-6">
+        <h1 className="text-xl font-bold">New post</h1>
+        <button
+          type="button"
+          onClick={() => setShowSeoMobile(true)}
+          className="lg:hidden rounded-lg border px-3 py-1.5 text-xs font-medium"
+        >
+          SEO settings
+        </button>
+      </div>
 
       <form onSubmit={save} className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
@@ -124,6 +146,15 @@ export default function NewBlogPostPage() {
             </div>
           </div>
           <div>
+            <label className="text-sm font-medium">Cover image URL</label>
+            <input
+              value={coverImage}
+              onChange={(e) => setCoverImage(e.target.value)}
+              placeholder="https://…"
+              className="w-full mt-1 rounded-lg border px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
             <label className="text-sm font-medium">Excerpt</label>
             <textarea
               value={excerpt}
@@ -154,23 +185,41 @@ export default function NewBlogPostPage() {
           </button>
         </div>
 
-        <div>
+        {/* SEO panel: inline on large screens */}
+        <div className="hidden lg:block">
           <BlogSeoPanel
             title={title}
             slug={slug}
-            seoTitle={seoTitle}
-            setSeoTitle={setSeoTitle}
-            seoDescription={seoDescription}
-            setSeoDescription={setSeoDescription}
-            focusKeyword={focusKeyword}
-            setFocusKeyword={setFocusKeyword}
-            canonical={canonical}
-            setCanonical={setCanonical}
-            robots={robots}
-            setRobots={setRobots}
+            excerpt={excerpt}
+            coverImage={coverImage}
+            data={seo}
+            onChange={setSeo}
           />
         </div>
       </form>
+
+      {/* SEO panel: slide-over on small/medium screens */}
+      {showSeoMobile && (
+        <div className="lg:hidden fixed inset-0 z-[70] flex justify-end">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setShowSeoMobile(false)} />
+          <div className="relative w-full sm:w-[420px] max-w-full bg-[#faf4f4] h-full overflow-y-auto shadow-xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-10">
+              <span className="font-semibold text-sm">SEO settings</span>
+              <button onClick={() => setShowSeoMobile(false)} className="p-1.5" aria-label="Close">✕</button>
+            </div>
+            <div className="p-3">
+              <BlogSeoPanel
+                title={title}
+                slug={slug}
+                excerpt={excerpt}
+                coverImage={coverImage}
+                data={seo}
+                onChange={setSeo}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
