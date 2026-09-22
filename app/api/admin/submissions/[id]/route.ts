@@ -13,12 +13,14 @@ const actionSchema = z.object({
 })
 
 function parseMeta(notes: string | null | undefined) {
-  const out: { memberCount?: number; photoUrl?: string } = {}
+  const out: { memberCount?: number; photoUrl?: string; categorySlug?: string } = {}
   if (!notes) return out
   const mc = notes.match(/memberCount:(\d+)/i)
   if (mc) out.memberCount = parseInt(mc[1], 10)
   const ph = notes.match(/photo:(https?:\/\/\S+)/i)
   if (ph) out.photoUrl = ph[1]
+  const cat = notes.match(/Category:\s*([a-z0-9_-]+)/i)
+  if (cat) out.categorySlug = cat[1].toLowerCase()
   return out
 }
 
@@ -65,6 +67,15 @@ export async function PATCH(
     const description = data.description ?? submission.description
     const meta = parseMeta(submission.notes)
 
+    // Resolve category: explicit admin choice → user-requested slug → none
+    let categoryId = data.categoryId || undefined
+    if (!categoryId && meta.categorySlug) {
+      const cat = await prisma.category.findFirst({
+        where: { slug: meta.categorySlug },
+      })
+      if (cat) categoryId = cat.id
+    }
+
     let entity = await prisma.entity.findUnique({
       where: { username: submission.username },
     })
@@ -74,7 +85,7 @@ export async function PATCH(
       description,
       type: submission.type,
       status: 'APPROVED' as const,
-      categoryId: data.categoryId || entity?.categoryId,
+      categoryId: categoryId || entity?.categoryId || null,
       language: submission.language || entity?.language,
       country: submission.country || entity?.country,
       shortDesc: (submission as any).shortDesc || entity?.shortDesc,
@@ -105,7 +116,7 @@ export async function PATCH(
       where: { id },
       data: {
         status: 'APPROVED',
-        notes: data.notes,
+        notes: data.notes ?? submission.notes,
         entityId: entity.id,
       },
     })
@@ -123,7 +134,7 @@ export async function PATCH(
       console.error('userMedia sync failed', e)
     }
 
-    return NextResponse.json({ success: true, status: 'APPROVED', entityId: entity.id })
+    return NextResponse.json({ success: true, status: 'APPROVED', entityId: entity.id, categoryId })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 })
