@@ -91,7 +91,7 @@ export default function AdminUsersPage() {
         if (!Number.isNaN(dollars)) payload.balanceCents = Math.round(dollars * 100)
       }
 
-      const res = await fetch(`/api/admin/users/${edit.id}`, {
+      const res = await fetch('/api/admin/users/' + edit.id, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -106,7 +106,7 @@ export default function AdminUsersPage() {
       if (adjustUsd !== '') {
         const adj = parseFloat(adjustUsd)
         if (!Number.isNaN(adj) && adj !== 0) {
-          await fetch(`/api/admin/users/${edit.id}`, {
+          await fetch('/api/admin/users/' + edit.id, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ balanceAdjustUsd: adj }),
@@ -123,7 +123,7 @@ export default function AdminUsersPage() {
   }
 
   async function quickAdjust(id: string, deltaUsd: number) {
-    await fetch(`/api/admin/users/${id}`, {
+    await fetch('/api/admin/users/' + id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ balanceAdjustUsd: deltaUsd }),
@@ -132,7 +132,7 @@ export default function AdminUsersPage() {
   }
 
   async function toggleActive(id: string, isActive: boolean) {
-    await fetch(`/api/admin/users/${id}`, {
+    await fetch('/api/admin/users/' + id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isActive: !isActive }),
@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
 
   async function deleteUser(id: string) {
     if (!window.confirm('Delete this user permanently?')) return
-    await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
+    await fetch('/api/admin/users/' + id, { method: 'DELETE' })
     setEdit(null)
     load()
   }
@@ -151,7 +151,7 @@ export default function AdminUsersPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-xl sm:text-2xl font-bold text-[#2d0808] mb-1">Users</h1>
       <p className="text-sm text-[#6b5555] mb-6">
-        Create users, edit profile & password, top up or subtract balance, activate / deactivate.
+        Create users, edit profile and password, top up or subtract balance, activate or deactivate.
       </p>
 
       <form
@@ -207,57 +207,58 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b last:border-0 border-[#f5f0f0]">
-                  <td className="px-4 py-3">{u.email}</td>
-                  <td className="px-4 py-3">{u.name || '—'}</td>
-                  <td className="px-4 py-3 font-medium">
-                    ${((u.balanceCents || 0) / 100).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${\n                        u.isActive !== false
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {u.isActive !== false ? 'Active' : 'Deactivated'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(u)}
-                      className="text-xs font-medium text-[#8b1a1a] hover:underline"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => quickAdjust(u.id, 10)}
-                      className="text-xs text-emerald-700 hover:underline"
-                      title="Add $10"
-                    >
-                      +$10
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => quickAdjust(u.id, -10)}
-                      className="text-xs text-amber-700 hover:underline"
-                      title="Subtract $10"
-                    >
-                      −$10
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleActive(u.id, u.isActive !== false)}
-                      className="text-xs text-slate-600 hover:underline"
-                    >
-                      {u.isActive !== false ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {users.map((u) => {
+                const active = u.isActive !== false
+                const statusClass = active
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-red-100 text-red-800'
+                return (
+                  <tr key={u.id} className="border-b last:border-0 border-[#f5f0f0]">
+                    <td className="px-4 py-3">{u.email}</td>
+                    <td className="px-4 py-3">{u.name || '—'}</td>
+                    <td className="px-4 py-3 font-medium">
+                      ${((u.balanceCents || 0) / 100).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={'text-xs px-2 py-0.5 rounded-full ' + statusClass}>
+                        {active ? 'Active' : 'Deactivated'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(u)}
+                        className="text-xs font-medium text-[#8b1a1a] hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => quickAdjust(u.id, 10)}
+                        className="text-xs text-emerald-700 hover:underline"
+                        title="Add $10"
+                      >
+                        +$10
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => quickAdjust(u.id, -10)}
+                        className="text-xs text-amber-700 hover:underline"
+                        title="Subtract $10"
+                      >
+                        -$10
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleActive(u.id, active)}
+                        className="text-xs text-slate-600 hover:underline"
+                      >
+                        {active ? 'Deactivate' : 'Activate'}
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -269,7 +270,7 @@ export default function AdminUsersPage() {
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-lg text-[#2d0808]">Edit user</h2>
               <button type="button" onClick={() => setEdit(null)} className="text-slate-400 text-xl">
-                ×
+                x
               </button>
             </div>
 
@@ -312,7 +313,7 @@ export default function AdminUsersPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-500">Adjust (± USD)</label>
+                <label className="text-xs font-semibold text-slate-500">Adjust (+/- USD)</label>
                 <input
                   value={adjustUsd}
                   onChange={(e) => setAdjustUsd(e.target.value)}
@@ -323,7 +324,7 @@ export default function AdminUsersPage() {
             </div>
             <p className="text-[11px] text-slate-400">
               Current: ${((edit.balanceCents || 0) / 100).toFixed(2)}. Set replaces balance; Adjust
-              adds/subtracts after set.
+              adds or subtracts after set.
             </p>
 
             <label className="flex items-center gap-2 text-sm">
@@ -344,7 +345,7 @@ export default function AdminUsersPage() {
                 onClick={saveEdit}
                 className="rounded-lg bg-[#8b1a1a] text-white text-sm font-semibold px-4 py-2 disabled:opacity-50"
               >
-                {saving ? 'Saving…' : 'Save changes'}
+                {saving ? 'Saving...' : 'Save changes'}
               </button>
               <button
                 type="button"

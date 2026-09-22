@@ -6,35 +6,37 @@ import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import OnlineBadge from '@/components/OnlineBadge'
 
-const DRAWER_SECTIONS: { title: string; links: { href: string; label: string; icon: string }[] }[] =
-  [
-    {
-      title: 'Discover',
-      links: [
-        { href: '/ranking', label: 'Ranking', icon: '🏆' },
-        { href: '/trending', label: 'Trending', icon: '🔥' },
-        { href: '/top', label: 'Rating', icon: '⭐' },
-        { href: '/explore', label: 'Explore', icon: '🧭' },
-        { href: '/lucky', label: "I'm Feeling Lucky", icon: '✨' },
-      ],
-    },
-    {
-      title: 'Tools',
-      links: [
-        { href: '/search', label: 'Search', icon: '🔍' },
-        { href: '/compare', label: 'Compare', icon: '▥' },
-        { href: '/tag', label: 'Tags', icon: '#' },
-        { href: '/collections', label: 'Collections', icon: '📚' },
-      ],
-    },
-    {
-      title: 'Content',
-      links: [
-        { href: '/blog', label: 'Blog', icon: '✍️' },
-        { href: '/submit', label: 'Add media', icon: '➕' },
-      ],
-    },
-  ]
+const DRAWER_SECTIONS: {
+  title: string
+  links: { href: string; label: string; icon: string }[]
+}[] = [
+  {
+    title: 'Discover',
+    links: [
+      { href: '/ranking', label: 'Ranking', icon: 'T' },
+      { href: '/trending', label: 'Trending', icon: 'F' },
+      { href: '/top', label: 'Rating', icon: 'S' },
+      { href: '/explore', label: 'Explore', icon: 'E' },
+      { href: '/lucky', label: "I'm Feeling Lucky", icon: '*' },
+    ],
+  },
+  {
+    title: 'Tools',
+    links: [
+      { href: '/search', label: 'Search', icon: '?' },
+      { href: '/compare', label: 'Compare', icon: '=' },
+      { href: '/tag', label: 'Tags', icon: '#' },
+      { href: '/collections', label: 'Collections', icon: 'C' },
+    ],
+  },
+  {
+    title: 'Content',
+    links: [
+      { href: '/blog', label: 'Blog', icon: 'B' },
+      { href: '/submit', label: 'Add media', icon: '+' },
+    ],
+  },
+]
 
 export default function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -56,9 +58,12 @@ export default function Navbar() {
     setDrawerOpen(false)
   }
 
+  function linkActive(href: string) {
+    return pathname === href || Boolean(pathname?.startsWith(href + '/'))
+  }
+
   return (
     <header className="sticky top-0 z-50">
-      {/* Top bar */}
       <div className="bg-[#1a2332] text-[#c8d0dc] text-[11px]">
         <div className="container mx-auto px-3 sm:px-4 h-8 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0 overflow-hidden">
@@ -92,7 +97,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Main bar */}
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="container mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2 min-w-0" onClick={closeDrawer}>
@@ -127,14 +131,27 @@ export default function Navbar() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="text-sm font-medium text-slate-600 hover:text-[#1a2332] px-2"
                 >
-                  {session?.user?.name || session?.user?.email?.split('@')[0] || 'Account'} ▾
+                  {session?.user?.name || session?.user?.email?.split('@')[0] || 'Account'}{' '}
+                  v
                 </button>
                 {userMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
                     <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1 text-sm">
-                      <Link href="/dashboard" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-slate-50">Dashboard</Link>
-                      <Link href="/dashboard/settings" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-slate-50">Settings</Link>
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block px-4 py-2 hover:bg-slate-50"
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/dashboard/settings"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block px-4 py-2 hover:bg-slate-50"
+                      >
+                        Settings
+                      </Link>
                       <button
                         type="button"
                         onClick={() => {
@@ -151,7 +168,6 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Hamburger — opens navigation drawer (all breakpoints) */}
             <button
               type="button"
               className="p-2 text-[#1a2332] rounded-lg hover:bg-slate-100"
@@ -171,11 +187,10 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Navigation drawer */}
       {drawerOpen && (
         <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-black/40" onClick={closeDrawer} />
-          <aside className="absolute inset-y-0 right-0 w-[min(100%,20rem)] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right">
+          <aside className="absolute inset-y-0 right-0 w-[min(100%,20rem)] bg-white shadow-2xl flex flex-col">
             <div className="h-14 flex items-center justify-between px-4 border-b border-slate-100">
               <span className="font-bold text-[#1a2332]">Menu</span>
               <button
@@ -184,7 +199,7 @@ export default function Navbar() {
                 className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500"
                 aria-label="Close"
               >
-                ✕
+                x
               </button>
             </div>
 
@@ -195,22 +210,20 @@ export default function Navbar() {
                     {section.title}
                   </p>
                   <nav className="px-2">
-                    {section.links.map((l) => (
-                      <Link
-                        key={l.href}
-                        href={l.href}
-                        onClick={closeDrawer}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${\n                          pathname === l.href || pathname?.startsWith(l.href + '/')
-                            ? 'bg-slate-100 text-[#1a2332]'
-                            : 'text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-sm">
-                          {l.icon}
-                        </span>
-                        {l.label}
-                      </Link>
-                    ))}
+                    {section.links.map((l) => {
+                      const active = linkActive(l.href)
+                      const cls = active
+                        ? 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium bg-slate-100 text-[#1a2332]'
+                        : 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50'
+                      return (
+                        <Link key={l.href} href={l.href} onClick={closeDrawer} className={cls}>
+                          <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold">
+                            {l.icon}
+                          </span>
+                          {l.label}
+                        </Link>
+                      )
+                    })}
                   </nav>
                 </div>
               ))}
@@ -227,7 +240,9 @@ export default function Navbar() {
                         onClick={closeDrawer}
                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">📊</span>
+                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs">
+                          D
+                        </span>
                         Dashboard
                       </Link>
                       <Link
@@ -235,7 +250,9 @@ export default function Navbar() {
                         onClick={closeDrawer}
                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">⚙</span>
+                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs">
+                          S
+                        </span>
                         Settings
                       </Link>
                       <button
@@ -246,7 +263,9 @@ export default function Navbar() {
                         }}
                         className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center">⎋</span>
+                        <span className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-xs">
+                          X
+                        </span>
                         Sign out
                       </button>
                     </>
@@ -257,7 +276,9 @@ export default function Navbar() {
                         onClick={closeDrawer}
                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">🔑</span>
+                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs">
+                          L
+                        </span>
                         Log in
                       </Link>
                       <Link
@@ -265,7 +286,9 @@ export default function Navbar() {
                         onClick={closeDrawer}
                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">✨</span>
+                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs">
+                          +
+                        </span>
                         Sign up
                       </Link>
                     </>
