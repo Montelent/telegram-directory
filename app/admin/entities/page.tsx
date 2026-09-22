@@ -92,7 +92,6 @@ export default function AdminEntitiesPage() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="rounded-lg border px-3 py-2.5 text-sm"
         >
-          <Link href={`/admin/entities/${entity.id}`} className="text-blue-600 hover:underline text-xs">Edit</Link>
           <option value="">All statuses</option>
           <option value="APPROVED">Approved</option>
           <option value="PENDING">Pending</option>
@@ -134,6 +133,7 @@ export default function AdminEntitiesPage() {
                   {entity.category && <span className="text-slate-500">{entity.category.name}</span>}
                 </div>
                 <div className="flex gap-3 mt-3 text-xs">
+                  <Link href={`/admin/entities/${entity.id}`} className="text-blue-600 hover:underline">Edit</Link>
                   {entity.status !== 'APPROVED' && (
                     <button onClick={() => updateStatus(entity.id, 'APPROVED')} disabled={processing === entity.id} className="text-green-600">Approve</button>
                   )}
@@ -180,6 +180,7 @@ export default function AdminEntitiesPage() {
                     <td className="px-4 py-3 text-slate-600">{entity.category?.name || '—'}</td>
                     <td className="px-4 py-3 text-slate-600">{entity.memberCount?.toLocaleString() ?? '—'}</td>
                     <td className="px-4 py-3 text-right space-x-2">
+                      <Link href={`/admin/entities/${entity.id}`} className="text-blue-600 hover:underline text-xs">Edit</Link>
                       {entity.status !== 'APPROVED' && (
                         <button onClick={() => updateStatus(entity.id, 'APPROVED')} disabled={processing === entity.id} className="text-green-600 hover:underline text-xs">Approve</button>
                       )}
