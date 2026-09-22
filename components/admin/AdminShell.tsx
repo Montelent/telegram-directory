@@ -59,7 +59,7 @@ export default function AdminShell({
   )
 
   return (
-    <div className="min-h-screen bg-[#faf4f4] flex">
+    <div className="min-h-screen bg-[#faf4f4] flex overflow-x-hidden">
       <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 border-r border-[#f0e0e0] bg-white">
         <div className="h-14 flex items-center px-5 border-b border-[#f0e0e0]">
           <Link href="/admin" className="font-bold text-lg text-[#2d0808]">
@@ -104,7 +104,7 @@ export default function AdminShell({
         <NavLinks onNavigate={() => setOpen(false)} />
       </aside>
 
-      <div className="flex-1 lg:pl-64">
+      <div className="flex-1 min-w-0 lg:pl-64">
         <main className="pt-14 lg:pt-0 min-h-screen">{children}</main>
       </div>
     </div>
