@@ -6,33 +6,48 @@ import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import OnlineBadge from '@/components/OnlineBadge'
 
-const DRAWER_SECTIONS: {
-  title: string
-  links: { href: string; label: string; icon: string }[]
-}[] = [
+type LinkItem = { href: string; label: string; icon: string }
+type Section =
+  | { kind: 'links'; title: string; links: LinkItem[] }
+  | { kind: 'accordion'; title: string; icon: string; links: LinkItem[] }
+
+const DRAWER: Section[] = [
   {
+    kind: 'accordion',
+    title: 'Media',
+    icon: 'M',
+    links: [
+      { href: '/channels', label: 'Channels', icon: 'C' },
+      { href: '/groups', label: 'Groups', icon: 'G' },
+      { href: '/bots', label: 'Bots', icon: 'B' },
+    ],
+  },
+  {
+    kind: 'links',
     title: 'Discover',
     links: [
-      { href: '/ranking', label: 'Ranking', icon: 'T' },
-      { href: '/trending', label: 'Trending', icon: 'F' },
+      { href: '/ranking', label: 'Ranking', icon: 'R' },
+      { href: '/trending', label: 'Trending', icon: 'T' },
       { href: '/top', label: 'Rating', icon: 'S' },
       { href: '/explore', label: 'Explore', icon: 'E' },
       { href: '/lucky', label: "I'm Feeling Lucky", icon: '*' },
     ],
   },
   {
+    kind: 'links',
     title: 'Tools',
     links: [
       { href: '/search', label: 'Search', icon: '?' },
       { href: '/compare', label: 'Compare', icon: '=' },
       { href: '/tag', label: 'Tags', icon: '#' },
-      { href: '/collections', label: 'Collections', icon: 'C' },
+      { href: '/collections', label: 'Collections', icon: 'L' },
     ],
   },
   {
+    kind: 'links',
     title: 'Content',
     links: [
-      { href: '/blog', label: 'Blog', icon: 'B' },
+      { href: '/blog', label: 'Blog', icon: 'W' },
       { href: '/submit', label: 'Add media', icon: '+' },
     ],
   },
@@ -41,6 +56,7 @@ const DRAWER_SECTIONS: {
 export default function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ Media: true })
   const pathname = usePathname()
   const { data: session, status } = useSession()
 
@@ -58,8 +74,27 @@ export default function Navbar() {
     setDrawerOpen(false)
   }
 
+  function toggleSection(title: string) {
+    setOpenSections((s) => ({ ...s, [title]: !s[title] }))
+  }
+
   function linkActive(href: string) {
     return pathname === href || Boolean(pathname?.startsWith(href + '/'))
+  }
+
+  function NavLink({ l }: { l: LinkItem }) {
+    const active = linkActive(l.href)
+    const cls = active
+      ? 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium bg-slate-100 text-[#1a2332]'
+      : 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50'
+    return (
+      <Link href={l.href} onClick={closeDrawer} className={cls}>
+        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold">
+          {l.icon}
+        </span>
+        {l.label}
+      </Link>
+    )
   }
 
   return (
@@ -131,8 +166,7 @@ export default function Navbar() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="text-sm font-medium text-slate-600 hover:text-[#1a2332] px-2"
                 >
-                  {session?.user?.name || session?.user?.email?.split('@')[0] || 'Account'}{' '}
-                  v
+                  {session?.user?.name || session?.user?.email?.split('@')[0] || 'Account'} v
                 </button>
                 {userMenuOpen && (
                   <>
@@ -204,29 +238,48 @@ export default function Navbar() {
             </div>
 
             <div className="flex-1 overflow-y-auto py-3">
-              {DRAWER_SECTIONS.map((section) => (
-                <div key={section.title} className="mb-4">
-                  <p className="px-4 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {section.title}
-                  </p>
-                  <nav className="px-2">
-                    {section.links.map((l) => {
-                      const active = linkActive(l.href)
-                      const cls = active
-                        ? 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium bg-slate-100 text-[#1a2332]'
-                        : 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50'
-                      return (
-                        <Link key={l.href} href={l.href} onClick={closeDrawer} className={cls}>
+              {DRAWER.map((section) => {
+                if (section.kind === 'accordion') {
+                  const open = openSections[section.title] !== false
+                  return (
+                    <div key={section.title} className="mb-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleSection(section.title)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-left"
+                      >
+                        <span className="flex items-center gap-3 text-sm font-semibold text-slate-800">
                           <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold">
-                            {l.icon}
+                            {section.icon}
                           </span>
-                          {l.label}
-                        </Link>
-                      )
-                    })}
-                  </nav>
-                </div>
-              ))}
+                          {section.title}
+                        </span>
+                        <span className="text-slate-400 text-xs">{open ? '▲' : '▼'}</span>
+                      </button>
+                      {open && (
+                        <nav className="px-2 pb-2 pl-4 space-y-0.5 border-l-2 border-slate-100 ml-7">
+                          {section.links.map((l) => (
+                            <NavLink key={l.href} l={l} />
+                          ))}
+                        </nav>
+                      )}
+                    </div>
+                  )
+                }
+
+                return (
+                  <div key={section.title} className="mb-4">
+                    <p className="px-4 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      {section.title}
+                    </p>
+                    <nav className="px-2">
+                      {section.links.map((l) => (
+                        <NavLink key={l.href} l={l} />
+                      ))}
+                    </nav>
+                  </div>
+                )
+              })}
 
               <div className="mb-4">
                 <p className="px-4 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -240,9 +293,6 @@ export default function Navbar() {
                         onClick={closeDrawer}
                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs">
-                          D
-                        </span>
                         Dashboard
                       </Link>
                       <Link
@@ -250,9 +300,6 @@ export default function Navbar() {
                         onClick={closeDrawer}
                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs">
-                          S
-                        </span>
                         Settings
                       </Link>
                       <button
@@ -263,9 +310,6 @@ export default function Navbar() {
                         }}
                         className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-xs">
-                          X
-                        </span>
                         Sign out
                       </button>
                     </>
@@ -276,9 +320,6 @@ export default function Navbar() {
                         onClick={closeDrawer}
                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs">
-                          L
-                        </span>
                         Log in
                       </Link>
                       <Link
@@ -286,9 +327,6 @@ export default function Navbar() {
                         onClick={closeDrawer}
                         className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs">
-                          +
-                        </span>
                         Sign up
                       </Link>
                     </>
