@@ -7,11 +7,11 @@ type SectionId = 'general' | 'seo' | 'homepage' | 'stats' | 'menu' | 'colors' | 
 
 const SECTIONS: { id: SectionId; label: string; desc: string }[] = [
   { id: 'general', label: 'Logo & site identity', desc: 'Name, tagline, logo URL' },
-  { id: 'seo', label: 'SEO', desc: 'Defaults + channel JSON-LD' },
+  { id: 'seo', label: 'SEO', desc: 'Meta, social cards, robots' },
   { id: 'homepage', label: 'Homepage', desc: 'Hero and Why section text' },
   { id: 'stats', label: 'Homepage counters', desc: 'Real or fake views / users / media' },
   { id: 'menu', label: 'Menu', desc: 'Header navigation labels & links' },
-  { id: 'colors', label: 'Colors', desc: 'Primary brand color' },
+  { id: 'colors', label: 'Colors', desc: 'Live brand color theme' },
   { id: 'submissions', label: 'Submissions & feature', desc: 'Rules text, feature price' },
 ]
 
@@ -58,6 +58,10 @@ export default function AdminSettingsPage() {
         {' · '}
         <Link href="/admin/scripts" className="text-[#8b1a1a] hover:underline">
           Scripts
+        </Link>
+        {' · '}
+        <Link href="/admin/footer" className="text-[#8b1a1a] hover:underline">
+          Footer
         </Link>
         {' · '}
         <Link href="/admin/payments" className="text-[#8b1a1a] hover:underline">
@@ -119,14 +123,47 @@ export default function AdminSettingsPage() {
                 onChange={(v) => set('default_seo_description', v)}
                 multiline
               />
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={values.seo_jsonld_entities !== '0'}
-                  onChange={(e) => set('seo_jsonld_entities', e.target.checked ? '1' : '0')}
-                />
-                Auto JSON-LD on entity pages
-              </label>
+              <Field
+                label="Default OG / social image URL"
+                value={values.seo_og_image}
+                onChange={(v) => set('seo_og_image', v)}
+                placeholder="https://…/og-image.png (1200×630)"
+              />
+              <div>
+                <label className="text-sm font-medium text-slate-700">Twitter card type</label>
+                <select
+                  value={values.seo_twitter_card || 'summary_large_image'}
+                  onChange={(e) => set('seo_twitter_card', e.target.value)}
+                  className="w-full mt-1 rounded-lg border px-3 py-2 text-sm"
+                >
+                  <option value="summary_large_image">Summary with large image</option>
+                  <option value="summary">Summary</option>
+                </select>
+              </div>
+              <Field
+                label="Canonical base URL"
+                value={values.seo_canonical_base}
+                onChange={(v) => set('seo_canonical_base', v)}
+                placeholder="https://yourdomain.com"
+              />
+              <div className="space-y-2 pt-1">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={values.seo_jsonld_entities !== '0'}
+                    onChange={(e) => set('seo_jsonld_entities', e.target.checked ? '1' : '0')}
+                  />
+                  Auto JSON-LD on entity pages
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={values.seo_noindex === '1'}
+                    onChange={(e) => set('seo_noindex', e.target.checked ? '1' : '0')}
+                  />
+                  Block search engines (robots: noindex) — for staging only
+                </label>
+              </div>
             </>
           )}
 
@@ -224,27 +261,36 @@ export default function AdminSettingsPage() {
                 multiline
                 placeholder="Search|/search, Blog|/blog"
               />
-              <Field
-                label="Footer menu"
-                value={values.menu_footer}
-                onChange={(v) => set('menu_footer', v)}
-                multiline
-              />
+              <p className="text-xs text-slate-500 -mt-2">
+                For the footer menu builder (columns, social links, reordering), use{' '}
+                <Link href="/admin/footer" className="text-[#8b1a1a] hover:underline">
+                  Footer settings
+                </Link>
+                .
+              </p>
             </>
           )}
 
           {section === 'colors' && (
             <>
               <h2 className="font-semibold">Colors</h2>
-              <Field
-                label="Primary (hex)"
+              <p className="text-xs text-slate-500 -mt-2">
+                Changes here update the live site's color theme immediately on save — no redeploy
+                needed. Accent shades (pale/wash/soft) are derived automatically.
+              </p>
+              <ColorField
+                label="Primary brand color"
                 value={values.color_primary || '#4a0e0e'}
                 onChange={(v) => set('color_primary', v)}
               />
-              <Field
-                label="Accent (hex)"
+              <ColorField
+                label="Accent color"
                 value={values.color_accent || '#c41e3a'}
                 onChange={(v) => set('color_accent', v)}
+              />
+              <ThemePreview
+                primary={values.color_primary || '#4a0e0e'}
+                accent={values.color_accent || '#c41e3a'}
               />
             </>
           )}
@@ -314,6 +360,72 @@ function Field({
           className="w-full mt-1 rounded-lg border px-3 py-2 text-sm"
         />
       )}
+    </div>
+  )
+}
+
+function isValidHex(v: string) {
+  return /^#[0-9a-f]{6}$/i.test(v)
+}
+
+function ColorField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  const valid = isValidHex(value)
+  return (
+    <div>
+      <label className="text-sm font-medium text-slate-700">{label}</label>
+      <div className="flex items-center gap-3 mt-1">
+        <input
+          type="color"
+          value={valid ? value : '#4a0e0e'}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-11 h-11 rounded-lg border cursor-pointer p-0.5 shrink-0"
+          aria-label={`${label} picker`}
+        />
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="#4a0e0e"
+          maxLength={7}
+          className={`flex-1 rounded-lg border px-3 py-2 text-sm font-mono ${
+            !valid && value ? 'border-red-300 text-red-600' : ''
+          }`}
+        />
+      </div>
+      {!valid && value && (
+        <p className="text-xs text-red-500 mt-1">Use a 6-digit hex color, e.g. #4a0e0e</p>
+      )}
+    </div>
+  )
+}
+
+function ThemePreview({ primary, accent }: { primary: string; accent: string }) {
+  const validPrimary = isValidHex(primary) ? primary : '#4a0e0e'
+  const validAccent = isValidHex(accent) ? accent : '#c41e3a'
+  return (
+    <div>
+      <p className="text-sm font-medium text-slate-700 mb-2">Preview</p>
+      <div
+        className="rounded-xl p-4 flex items-center justify-between gap-3"
+        style={{ background: `linear-gradient(135deg, ${validAccent} 0%, ${validPrimary} 100%)` }}
+      >
+        <div>
+          <p className="text-white font-semibold text-sm">Your site header / buttons</p>
+          <p className="text-white/80 text-xs">This gradient is used across CTAs</p>
+        </div>
+        <span
+          className="rounded-lg bg-white/15 text-white text-xs font-medium px-3 py-1.5 border border-white/30"
+        >
+          Add media
+        </span>
+      </div>
     </div>
   )
 }
