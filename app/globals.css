@@ -15,9 +15,31 @@
   --muted: #6b5555;
 }
 
+html {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 body {
   color: var(--ink);
   background: var(--red-wash);
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Prevent long titles/usernames from blowing out mobile width */
+img,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+.prose,
+.prose * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .btn-primary {

@@ -11,7 +11,8 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Telegram Directory – Discover Public Groups & Channels',
-  description: 'Search and browse public Telegram groups and channels by category, language, and more.',
+  description:
+    'Search and browse public Telegram groups and channels by category, language, and more.',
 }
 
 export default async function RootLayout({
@@ -20,15 +21,18 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="overflow-x-hidden">
       <head>
         <HeaderScripts />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
       </head>
-      <body className={`${inter.className} antialiased min-h-screen flex flex-col`}>
+      <body
+        className={`${inter.className} antialiased min-h-screen flex flex-col overflow-x-hidden max-w-[100vw]`}
+      >
         <Providers>
           <Navbar />
           <AdSlot slot="header" />
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 w-full min-w-0 overflow-x-hidden">{children}</div>
           <ConditionalFooter>
             <SiteFooter />
           </ConditionalFooter>
