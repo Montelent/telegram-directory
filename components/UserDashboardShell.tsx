@@ -6,62 +6,15 @@ import { useState } from 'react'
 import { signOut } from 'next-auth/react'
 
 const nav = [
-  { href: '/dashboard', label: 'Dashboard', icon: 'overview' },
-  { href: '/dashboard/media', label: 'Media list', icon: 'media' },
-  { href: '/submit', label: 'Add media', icon: 'add' },
-  { href: '/dashboard/collections', label: 'My collections', icon: 'collections' },
-  { href: '/dashboard/deposit', label: 'Deposit', icon: 'deposit' },
-  { href: '/dashboard/ads', label: 'Advertising', icon: 'ads' },
-  { href: '/account', label: 'Account', icon: 'account' },
+  { href: '/dashboard', label: 'Dashboard', icon: '▦' },
+  { href: '/dashboard/media', label: 'Media List', icon: '🔗' },
+  { href: '/dashboard/collections', label: 'My Collections', icon: '☰' },
+  { href: '/dashboard/deposit', label: 'Deposit', icon: '💼' },
+  { href: '/dashboard/ads', label: 'Advertising', icon: '📢' },
+  { href: '/dashboard/earn', label: 'Earn/Advertise', icon: '↩' },
+  { href: '/dashboard/api', label: 'API', icon: '🔌' },
+  { href: '/dashboard/settings', label: 'Settings', icon: '⚙' },
 ]
-
-function Icon({ name }: { name: string }) {
-  const cls = 'w-5 h-5'
-  switch (name) {
-    case 'add':
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-        </svg>
-      )
-    case 'overview':
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      )
-    case 'media':
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-      )
-    case 'collections':
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-        </svg>
-      )
-    case 'deposit':
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      )
-    case 'ads':
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-        </svg>
-      )
-    default:
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      )
-  }
-}
 
 export default function UserDashboardShell({
   children,
@@ -73,86 +26,66 @@ export default function UserDashboardShell({
   name?: string | null
 }) {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(true)
 
   function active(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard'
-    if (href === '/submit') return pathname === '/submit'
     return pathname.startsWith(href)
   }
 
-  const Nav = ({ onNav }: { onNav?: () => void }) => (
-    <nav className="flex flex-col gap-0.5 px-3 py-4">
-      <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#9a7777]">
-        Overview
-      </p>
-      {nav.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          onClick={onNav}
-          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-            active(item.href)
-              ? 'bg-[#f8e8e8] text-[#8b1a1a]'
-              : 'text-[#5c4040] hover:bg-[#faf4f4]'
-          }`}
-        >
-          <Icon name={item.icon} />
-          {item.label}
-        </Link>
-      ))}
-    </nav>
-  )
-
   return (
-    <div className="min-h-screen bg-[#faf4f4] flex">
-      <aside className="hidden md:flex md:flex-col md:w-[260px] md:fixed md:inset-y-0 bg-white border-r border-[#f0e0e0]">
-        <div className="h-16 flex items-center px-5 border-b border-[#f0e0e0]">
-          <Link href="/" className="font-bold text-[#2d0808] tracking-tight">
-            Telegram Directory
-          </Link>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          <Nav />
-        </div>
-        <div className="p-4 border-t border-[#f0e0e0]">
-          <p className="text-xs text-[#6b5555] truncate">{name || email}</p>
-          <button
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className="mt-2 text-xs text-[#c41e3a] hover:underline"
-          >
-            Sign out
-          </button>
-        </div>
-      </aside>
-
-      <div className="md:hidden fixed top-0 inset-x-0 z-40 h-14 bg-white border-b border-[#f0e0e0] flex items-center justify-between px-4">
-        <button onClick={() => setOpen(true)} className="p-2 -ml-2" aria-label="Menu">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+    <div className="min-h-screen bg-[#eef1f6]">
+      <div className="container mx-auto px-3 sm:px-4 py-4 max-w-lg">
+        {/* Show / Hide Menu — telegramchannels.me style */}
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          className="w-full mb-3 flex items-center justify-center gap-2 rounded-2xl bg-white border border-slate-200/80 shadow-sm px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
+        >
+          <span className="text-slate-400">{menuOpen ? '⌃' : '☰'}</span>
+          {menuOpen ? 'Hide Menu' : 'Show Menu'}
         </button>
-        <span className="font-semibold text-sm text-[#2d0808]">Dashboard</span>
-        <Link href="/submit" className="text-xs font-semibold text-[#8b1a1a]">
-          + Add
-        </Link>
-      </div>
 
-      {open && <div className="md:hidden fixed inset-0 z-50 bg-black/30" onClick={() => setOpen(false)} />}
-      <aside
-        className={`md:hidden fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transition-transform ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="h-14 flex items-center justify-between px-4 border-b">
-          <span className="font-bold text-[#2d0808]">Menu</span>
-          <button onClick={() => setOpen(false)}>✕</button>
-        </div>
-        <Nav onNav={() => setOpen(false)} />
-      </aside>
+        {menuOpen && (
+          <div className="mb-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm overflow-hidden">
+            <nav className="p-2 space-y-0.5">
+              {nav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium transition ${
+                    active(item.href)
+                      ? 'bg-slate-100 text-slate-900'
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0 ${
+                      active(item.href)
+                        ? 'bg-[#1a2332] text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="border-t border-slate-100 px-4 py-3 flex items-center justify-between text-xs text-slate-500">
+              <span className="truncate">{name || email}</span>
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="text-[#c41e3a] font-medium shrink-0"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
 
-      <div className="flex-1 md:pl-[260px]">
-        <div className="pt-14 md:pt-0 min-h-screen">{children}</div>
+        {children}
       </div>
     </div>
   )

@@ -12,9 +12,11 @@ export default function Navbar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
 
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/dashboard')) return null
+  // Admin keeps its own shell — hide public navbar there only
+  if (pathname?.startsWith('/admin')) return null
 
   const isUser = session && (session.user as any)?.role === 'user'
+  const onDashboard = pathname?.startsWith('/dashboard')
 
   const topLinks = [
     { href: '/ranking', label: 'Ranking' },
@@ -104,9 +106,10 @@ export default function Navbar() {
                 {userMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-48 bg-white border border-[#f0e0e0] rounded-xl shadow-lg z-50 py-1 text-sm">
+                    <div className="absolute right-0 mt-2 w-52 bg-white border border-[#f0e0e0] rounded-xl shadow-lg z-50 py-1 text-sm">
                       <Link href="/dashboard" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-[#faf4f4]">Dashboard</Link>
-                      <Link href="/account" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-[#faf4f4]">Account</Link>
+                      <Link href="/dashboard/media" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-[#faf4f4]">Media list</Link>
+                      <Link href="/dashboard/settings" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2 hover:bg-[#faf4f4]">Settings</Link>
                       <button
                         onClick={() => { setUserMenuOpen(false); signOut({ callbackUrl: '/' }) }}
                         className="w-full text-left px-4 py-2 text-[#c41e3a] hover:bg-[#faf4f4]"
@@ -158,6 +161,7 @@ export default function Navbar() {
               {isUser ? (
                 <>
                   <Link href="/dashboard" onClick={() => setOpen(false)} className="py-2">Dashboard</Link>
+                  <Link href="/dashboard/settings" onClick={() => setOpen(false)} className="py-2">Settings</Link>
                   <button onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }) }} className="py-2 text-left text-[#c41e3a]">Sign out</button>
                 </>
               ) : (
