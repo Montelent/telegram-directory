@@ -16,8 +16,8 @@ interface Props {
 
 function formatCount(n: number | null | undefined) {
   if (n == null) return '—'
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(2)}K`
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M'
+  if (n >= 1_000) return (n / 1_000).toFixed(2) + 'K'
   return n.toLocaleString()
 }
 
@@ -139,7 +139,7 @@ export default async function EntityByIdPage({ params }: Props) {
   }
 
   const telegramUrl = entity.username
-    ? `https://t.me/${entity.username}`
+    ? 'https://t.me/' + entity.username
     : entity.inviteLink || '#'
 
   const typeLabel = entity.type === 'CHANNEL' ? 'CHANNEL' : 'GROUP'
@@ -181,7 +181,7 @@ export default async function EntityByIdPage({ params }: Props) {
           {entity.category && (
             <>
               <span>/</span>
-              <Link href={`/category/${entity.category.slug}`} className="hover:text-[#0088cc]">
+              <Link href={'/category/' + entity.category.slug} className="hover:text-[#0088cc]">
                 {entity.category.name}
               </Link>
             </>
@@ -200,7 +200,7 @@ export default async function EntityByIdPage({ params }: Props) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-[#0088cc] hover:bg-[#0077b5] text-white text-sm font-semibold px-5 py-2.5 shadow-sm"
             >
-              <span className="text-base">✈</span> View Channel
+              View Channel
             </a>
             <div className="flex items-center gap-3">
               <div className="text-right text-xs">
@@ -237,12 +237,12 @@ export default async function EntityByIdPage({ params }: Props) {
                 </span>
                 {entity.isVerified && (
                   <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
-                    ✓ Verified
+                    Verified
                   </span>
                 )}
                 {entity.isFeatured && (
                   <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
-                    ★ Featured
+                    Featured
                   </span>
                 )}
                 {entity.isNsfw && (
@@ -261,7 +261,7 @@ export default async function EntityByIdPage({ params }: Props) {
           <div className="px-4 sm:px-5 pb-3 flex flex-wrap gap-1.5">
             {entity.category && (
               <Link
-                href={`/category/${entity.category.slug}`}
+                href={'/category/' + entity.category.slug}
                 className="text-[11px] rounded-full bg-slate-100 text-slate-600 px-2.5 py-1 hover:bg-slate-200"
               >
                 {entity.category.name}
@@ -293,23 +293,22 @@ export default async function EntityByIdPage({ params }: Props) {
             </div>
           )}
 
-          {/* Rankings + Compare / Share */}
           <div className="mx-4 sm:mx-5 mb-4 rounded-2xl border border-slate-100 px-4 py-4">
             <p className="text-sm font-semibold text-slate-800 mb-3">Rankings</p>
             <div className="grid grid-cols-2 gap-3">
               <RankCard
                 label="Global Rank"
-                value={globalRank != null ? `#${globalRank.toLocaleString()}` : '—'}
-                sub={totalApproved ? `of ${totalApproved.toLocaleString()}` : undefined}
+                value={globalRank != null ? '#' + globalRank.toLocaleString() : '—'}
+                sub={totalApproved ? 'of ' + totalApproved.toLocaleString() : undefined}
               />
               <RankCard
                 label="Language Rank"
-                value={languageRank != null ? `#${languageRank.toLocaleString()}` : '—'}
+                value={languageRank != null ? '#' + languageRank.toLocaleString() : '—'}
                 sub={entity.language || undefined}
               />
               <RankCard
                 label="Category Rank"
-                value={categoryRank != null ? `#${categoryRank.toLocaleString()}` : '—'}
+                value={categoryRank != null ? '#' + categoryRank.toLocaleString() : '—'}
                 sub={entity.category?.name}
               />
               <RankCard label="Members" value={formatFull(entity.memberCount)} sub="subscribers" />
@@ -318,6 +317,9 @@ export default async function EntityByIdPage({ params }: Props) {
               entityId={entity.id}
               title={entity.title}
               username={entity.username}
+              memberCount={entity.memberCount}
+              type={entity.type}
+              globalRank={globalRank}
             />
           </div>
 
@@ -328,12 +330,12 @@ export default async function EntityByIdPage({ params }: Props) {
             </div>
             <div className="h-14 flex items-end gap-0.5 opacity-60">
               {Array.from({ length: 24 }).map((_, i) => {
-                const h = 20 + ((i * 17 + (entity.memberCount || 10)) % 40)
+                const barH = 20 + ((i * 17 + (entity.memberCount || 10)) % 40)
                 return (
                   <div
                     key={i}
                     className="flex-1 rounded-t bg-gradient-to-t from-[#0088cc]/40 to-[#0088cc]"
-                    style={{ height: `${h}%` }}
+                    style={{ height: barH + '%' }}
                   />
                 )
               })}
@@ -413,7 +415,7 @@ export default async function EntityByIdPage({ params }: Props) {
               {related.map((r) => (
                 <li key={r.id}>
                   <Link
-                    href={`/entity/${r.id}`}
+                    href={'/entity/' + r.id}
                     className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5 hover:border-[#0088cc]/30 hover:bg-slate-50 transition"
                   >
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm font-bold text-slate-600 shrink-0">
@@ -422,8 +424,8 @@ export default async function EntityByIdPage({ params }: Props) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-slate-900 truncate">{r.title}</p>
                       <p className="text-[11px] text-slate-400 truncate">
-                        {r.username ? `@${r.username}` : r.type}
-                        {r.category ? ` · ${r.category.name}` : ''}
+                        {r.username ? '@' + r.username : r.type}
+                        {r.category ? ' · ' + r.category.name : ''}
                       </p>
                     </div>
                     <span className="text-xs font-semibold text-slate-600 shrink-0">
