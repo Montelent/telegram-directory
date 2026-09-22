@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 interface Category {
   id: string
@@ -91,6 +92,7 @@ export default function AdminEntitiesPage() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="rounded-lg border px-3 py-2.5 text-sm"
         >
+          <Link href={`/admin/entities/${entity.id}`} className="text-blue-600 hover:underline text-xs">Edit</Link>
           <option value="">All statuses</option>
           <option value="APPROVED">Approved</option>
           <option value="PENDING">Pending</option>
