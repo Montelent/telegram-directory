@@ -66,6 +66,16 @@ model Entity {
   submissions   Submission[]
   reviews       Review[]
   userMedia     UserMedia[]
+
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  seoJsonLd      String?
+  focusKeyword   String?
+  canonicalUrl   String?
+  robots         String?  @default("index,follow")
+  ogImage        String?
+
   @@unique([username])
   @@index([status])
   @@index([type])
