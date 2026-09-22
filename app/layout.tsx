@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import SiteFooter from '@/components/SiteFooter'
+import ConditionalFooter from '@/components/ConditionalFooter'
 import Providers from '@/components/Providers'
 import { HeaderScripts, FooterScripts, AdSlot } from '@/components/SiteScripts'
 
@@ -28,7 +29,9 @@ export default async function RootLayout({
           <Navbar />
           <AdSlot slot="header" />
           <div className="flex-1">{children}</div>
-          <SiteFooter />
+          <ConditionalFooter>
+            <SiteFooter />
+          </ConditionalFooter>
           <FooterScripts />
         </Providers>
       </body>
