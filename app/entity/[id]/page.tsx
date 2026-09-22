@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -12,6 +13,31 @@ export const dynamic = 'force-dynamic'
 
 interface Props {
   params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
+  const entity = await prisma.entity.findUnique({ where: { id } })
+  if (!entity || entity.status !== 'APPROVED') return {}
+
+  const title = entity.seoTitle || entity.title
+  const description = entity.seoDescription || entity.shortDesc || entity.description || undefined
+  const robotsStr = entity.robots || 'index,follow'
+
+  return {
+    title,
+    description,
+    alternates: entity.canonicalUrl ? { canonical: entity.canonicalUrl } : undefined,
+    robots: {
+      index: !robotsStr.includes('noindex'),
+      follow: !robotsStr.includes('nofollow'),
+    },
+    openGraph: {
+      title,
+      description,
+      images: entity.ogImage || entity.photoUrl ? [entity.ogImage || entity.photoUrl!] : undefined,
+    },
+  }
 }
 
 function formatCount(n: number | null | undefined) {
@@ -151,19 +177,23 @@ export default async function EntityByIdPage({ params }: Props) {
     .filter(Boolean)
     .slice(0, 8)
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: entity.title,
-    description: shortDesc || undefined,
-    url: telegramUrl,
-  }
+  // Admin-controlled JSON-LD (set via Admin → Groups & Channels → Edit → SEO panel).
+  // Falls back to a minimal WebPage object for entities saved before this existed.
+  const jsonLd =
+    entity.seoJsonLd ||
+    JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: entity.title,
+      description: shortDesc || undefined,
+      url: telegramUrl,
+    })
 
   return (
     <main className="min-h-screen bg-[#eef1f6]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
       />
 
       <div className="container mx-auto px-3 sm:px-4 py-5 max-w-2xl">
