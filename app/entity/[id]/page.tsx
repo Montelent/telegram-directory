@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import ReviewSection from '@/components/ReviewSection'
+import ReportMenu from '@/components/ReportMenu'
+import RankShareActions from '@/components/RankShareActions'
 import { AdSlot } from '@/components/SiteScripts'
 
 export const dynamic = 'force-dynamic'
@@ -122,7 +124,10 @@ export default async function EntityByIdPage({ params }: Props) {
     })
     if (related.length < 4) {
       const more = await prisma.entity.findMany({
-        where: { status: 'APPROVED', id: { not: entity.id, notIn: related.map((r) => r.id) } },
+        where: {
+          status: 'APPROVED',
+          id: { not: entity.id, notIn: related.map((r) => r.id) },
+        },
         include: { category: true },
         orderBy: { memberCount: 'desc' },
         take: 8 - related.length,
@@ -162,11 +167,17 @@ export default async function EntityByIdPage({ params }: Props) {
       />
 
       <div className="container mx-auto px-3 sm:px-4 py-5 max-w-2xl">
-        {/* Breadcrumbs: Home / Channels / Category / Title */}
-        <nav className="text-[11px] text-slate-500 mb-3 flex flex-wrap items-center gap-1" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-[#0088cc]">Home</Link>
+        <nav
+          className="text-[11px] text-slate-500 mb-3 flex flex-wrap items-center gap-1"
+          aria-label="Breadcrumb"
+        >
+          <Link href="/" className="hover:text-[#0088cc]">
+            Home
+          </Link>
           <span>/</span>
-          <Link href="/explore" className="hover:text-[#0088cc]">Channels</Link>
+          <Link href="/explore" className="hover:text-[#0088cc]">
+            Channels
+          </Link>
           {entity.category && (
             <>
               <span>/</span>
@@ -191,17 +202,18 @@ export default async function EntityByIdPage({ params }: Props) {
             >
               <span className="text-base">✈</span> View Channel
             </a>
-            <div className="flex items-center gap-4 text-right text-xs">
-              <div>
+            <div className="flex items-center gap-3">
+              <div className="text-right text-xs">
                 <p className="font-bold text-slate-800 text-sm">{formatCount(entity.memberCount)}</p>
                 <p className="text-[10px] text-slate-400">subs</p>
               </div>
-              <div>
+              <div className="text-right text-xs">
                 <p className="font-bold text-slate-800 text-sm">
                   {avgRating != null ? avgRating.toFixed(2) : '—'}
                 </p>
                 <p className="text-[10px] text-slate-400">rating</p>
               </div>
+              <ReportMenu entityId={entity.id} title={entity.title} />
             </div>
           </div>
 
@@ -239,9 +251,7 @@ export default async function EntityByIdPage({ params }: Props) {
                   </span>
                 )}
               </div>
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
-                {entity.title}
-              </h1>
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">{entity.title}</h1>
               {entity.username && (
                 <p className="text-[#0088cc] text-sm font-medium">@{entity.username}</p>
               )}
@@ -276,35 +286,39 @@ export default async function EntityByIdPage({ params }: Props) {
 
           {(shortDesc || longDesc) && (
             <div className="mx-4 sm:mx-5 mb-4 rounded-xl bg-[#f7f8fa] border border-slate-100 px-4 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">
-                Description
-              </p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5">Description</p>
               <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
                 {shortDesc || longDesc}
               </p>
             </div>
           )}
 
-          <div className="px-4 sm:px-5 pb-4">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Rankings</p>
-            <div className="grid grid-cols-2 gap-2">
+          {/* Rankings + Compare / Share */}
+          <div className="mx-4 sm:mx-5 mb-4 rounded-2xl border border-slate-100 px-4 py-4">
+            <p className="text-sm font-semibold text-slate-800 mb-3">Rankings</p>
+            <div className="grid grid-cols-2 gap-3">
               <RankCard
                 label="Global Rank"
-                value={globalRank != null ? `#${globalRank}` : '—'}
+                value={globalRank != null ? `#${globalRank.toLocaleString()}` : '—'}
                 sub={totalApproved ? `of ${totalApproved.toLocaleString()}` : undefined}
               />
               <RankCard
                 label="Language Rank"
-                value={languageRank != null ? `#${languageRank}` : '—'}
+                value={languageRank != null ? `#${languageRank.toLocaleString()}` : '—'}
                 sub={entity.language || undefined}
               />
               <RankCard
                 label="Category Rank"
-                value={categoryRank != null ? `#${categoryRank}` : '—'}
+                value={categoryRank != null ? `#${categoryRank.toLocaleString()}` : '—'}
                 sub={entity.category?.name}
               />
               <RankCard label="Members" value={formatFull(entity.memberCount)} sub="subscribers" />
             </div>
+            <RankShareActions
+              entityId={entity.id}
+              title={entity.title}
+              username={entity.username}
+            />
           </div>
 
           <div className="mx-4 sm:mx-5 mb-4 rounded-xl border border-slate-100 px-4 py-3">
