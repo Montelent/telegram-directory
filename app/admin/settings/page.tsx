@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import {
+  parseTopLinks,
+  serializeTopLinks,
+  parseDrawerSections,
+  serializeDrawerSections,
+  type MenuLink,
+  type MenuSection,
+} from '@/lib/menu'
 
 type SectionId = 'general' | 'seo' | 'homepage' | 'stats' | 'menu' | 'colors' | 'submissions'
 
@@ -18,6 +26,8 @@ const SECTIONS: { id: SectionId; label: string; desc: string }[] = [
 export default function AdminSettingsPage() {
   const [section, setSection] = useState<SectionId>('general')
   const [values, setValues] = useState<Record<string, string>>({})
+  const [topLinks, setTopLinks] = useState<MenuLink[]>([])
+  const [drawerSections, setDrawerSections] = useState<MenuSection[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
@@ -25,9 +35,104 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     fetch('/api/admin/settings')
       .then((r) => r.json())
-      .then((d) => setValues(d.settings || {}))
+      .then((d) => {
+        const s = d.settings || {}
+        setValues(s)
+        setTopLinks(parseTopLinks(s.menu_header))
+        setDrawerSections(parseDrawerSections(s.menu_drawer_json))
+      })
       .finally(() => setLoading(false))
   }, [])
+
+  function updateTopLink(idx: number, field: keyof MenuLink, value: string) {
+    setTopLinks((rows) => {
+      const next = [...rows]
+      next[idx] = { ...next[idx], [field]: value }
+      return next
+    })
+  }
+
+  function addTopLink() {
+    setTopLinks((rows) => [...rows, { label: '', href: '', icon: '' }])
+  }
+
+  function removeTopLink(idx: number) {
+    setTopLinks((rows) => rows.filter((_, i) => i !== idx))
+  }
+
+  function moveTopLink(idx: number, dir: -1 | 1) {
+    setTopLinks((rows) => {
+      const next = [...rows]
+      const target = idx + dir
+      if (target < 0 || target >= next.length) return rows
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
+  }
+
+  function updateSectionTitle(sIdx: number, title: string) {
+    setDrawerSections((secs) => {
+      const next = [...secs]
+      next[sIdx] = { ...next[sIdx], title }
+      return next
+    })
+  }
+
+  function addSection() {
+    setDrawerSections((secs) => [...secs, { title: '', icon: '', links: [] }])
+  }
+
+  function removeSection(sIdx: number) {
+    setDrawerSections((secs) => secs.filter((_, i) => i !== sIdx))
+  }
+
+  function moveSection(sIdx: number, dir: -1 | 1) {
+    setDrawerSections((secs) => {
+      const next = [...secs]
+      const target = sIdx + dir
+      if (target < 0 || target >= next.length) return secs
+      ;[next[sIdx], next[target]] = [next[target], next[sIdx]]
+      return next
+    })
+  }
+
+  function updateSectionLink(sIdx: number, lIdx: number, field: keyof MenuLink, value: string) {
+    setDrawerSections((secs) => {
+      const next = [...secs]
+      const links = [...next[sIdx].links]
+      links[lIdx] = { ...links[lIdx], [field]: value }
+      next[sIdx] = { ...next[sIdx], links }
+      return next
+    })
+  }
+
+  function addSectionLink(sIdx: number) {
+    setDrawerSections((secs) => {
+      const next = [...secs]
+      next[sIdx] = { ...next[sIdx], links: [...next[sIdx].links, { label: '', href: '', icon: '' }] }
+      return next
+    })
+  }
+
+  function removeSectionLink(sIdx: number, lIdx: number) {
+    setDrawerSections((secs) => {
+      const next = [...secs]
+      next[sIdx] = { ...next[sIdx], links: next[sIdx].links.filter((_, i) => i !== lIdx) }
+      return next
+    })
+  }
+
+  function moveSectionLink(sIdx: number, lIdx: number, dir: -1 | 1) {
+    setDrawerSections((secs) => {
+      const next = [...secs]
+      const links = [...next[sIdx].links]
+      const target = lIdx + dir
+      if (target < 0 || target >= links.length) return secs
+      ;[links[lIdx], links[target]] = [links[target], links[lIdx]]
+      next[sIdx] = { ...next[sIdx], links }
+      return next
+    })
+  }
 
   function set(key: string, value: string) {
     setValues((v) => ({ ...v, [key]: value }))
@@ -36,10 +141,15 @@ export default function AdminSettingsPage() {
   async function save() {
     setSaving(true)
     setMsg('')
+    const payload = {
+      ...values,
+      menu_header: serializeTopLinks(topLinks),
+      menu_drawer_json: serializeDrawerSections(drawerSections),
+    }
     const res = await fetch('/api/admin/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ settings: values }),
+      body: JSON.stringify({ settings: payload }),
     })
     setSaving(false)
     setMsg(res.ok ? 'Settings saved.' : 'Failed. Ensure site_settings table exists.')
@@ -253,16 +363,185 @@ export default function AdminSettingsPage() {
 
           {section === 'menu' && (
             <>
-              <h2 className="font-semibold">Menu</h2>
-              <Field
-                label="Header menu (Label|/path)"
-                value={values.menu_header}
-                onChange={(v) => set('menu_header', v)}
-                multiline
-                placeholder="Search|/search, Blog|/blog"
-              />
+              <h2 className="font-semibold">Top utility bar</h2>
               <p className="text-xs text-slate-500 -mt-2">
-                For the footer menu builder (columns, social links, reordering), use{' '}
+                The thin strip at the very top of every page (desktop only).
+              </p>
+              <div className="space-y-2">
+                {topLinks.map((row, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    <input
+                      value={row.label}
+                      onChange={(e) => updateTopLink(idx, 'label', e.target.value)}
+                      placeholder="Label"
+                      className="w-28 rounded-md border px-2 py-1.5 text-xs"
+                    />
+                    <input
+                      value={row.href}
+                      onChange={(e) => updateTopLink(idx, 'href', e.target.value)}
+                      placeholder="/path"
+                      className="flex-1 rounded-md border px-2 py-1.5 text-xs font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => moveTopLink(idx, -1)}
+                      disabled={idx === 0}
+                      className="w-6 h-6 rounded text-[#8b1a1a] hover:bg-[#f8e8e8] disabled:opacity-20 text-xs shrink-0"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveTopLink(idx, 1)}
+                      disabled={idx === topLinks.length - 1}
+                      className="w-6 h-6 rounded text-[#8b1a1a] hover:bg-[#f8e8e8] disabled:opacity-20 text-xs shrink-0"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeTopLink(idx)}
+                      className="w-6 h-6 rounded text-red-600 hover:bg-red-50 text-xs shrink-0"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={addTopLink}
+                className="w-full rounded-lg border border-dashed py-1.5 text-xs text-[#8b1a1a] hover:bg-[#faf4f4]"
+              >
+                + Add top bar link
+              </button>
+
+              <div className="border-t pt-4 mt-4">
+                <h2 className="font-semibold">Drawer menu sections</h2>
+                <p className="text-xs text-slate-500 -mt-1 mb-3">
+                  The full menu opened from the ☰ icon. Each section is a collapsible group with its
+                  own links.
+                </p>
+                <div className="space-y-3">
+                  {drawerSections.map((sec, sIdx) => (
+                    <div key={sIdx} className="rounded-xl border bg-slate-50 p-3">
+                      <div className="flex items-center gap-1 mb-2">
+                        <input
+                          value={sec.icon}
+                          onChange={(e) => {
+                            const icon = e.target.value.slice(0, 2)
+                            setDrawerSections((secs) => {
+                              const next = [...secs]
+                              next[sIdx] = { ...next[sIdx], icon }
+                              return next
+                            })
+                          }}
+                          placeholder="Icon"
+                          maxLength={2}
+                          className="w-12 rounded-md border px-2 py-1.5 text-xs text-center font-semibold"
+                        />
+                        <input
+                          value={sec.title}
+                          onChange={(e) => updateSectionTitle(sIdx, e.target.value)}
+                          placeholder="Section title (e.g. Discover)"
+                          className="flex-1 rounded-md border px-2 py-1.5 text-sm font-medium"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => moveSection(sIdx, -1)}
+                          disabled={sIdx === 0}
+                          className="w-6 h-6 rounded text-[#8b1a1a] hover:bg-white disabled:opacity-20 text-xs shrink-0"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveSection(sIdx, 1)}
+                          disabled={sIdx === drawerSections.length - 1}
+                          className="w-6 h-6 rounded text-[#8b1a1a] hover:bg-white disabled:opacity-20 text-xs shrink-0"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeSection(sIdx)}
+                          className="w-6 h-6 rounded text-red-600 hover:bg-red-50 text-xs shrink-0"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="space-y-1.5 pl-2">
+                        {sec.links.map((l, lIdx) => (
+                          <div key={lIdx} className="flex items-center gap-1">
+                            <input
+                              value={l.icon}
+                              onChange={(e) =>
+                                updateSectionLink(sIdx, lIdx, 'icon', e.target.value.slice(0, 2))
+                              }
+                              placeholder="•"
+                              maxLength={2}
+                              className="w-9 rounded-md border px-1 py-1.5 text-xs text-center bg-white"
+                            />
+                            <input
+                              value={l.label}
+                              onChange={(e) => updateSectionLink(sIdx, lIdx, 'label', e.target.value)}
+                              placeholder="Label"
+                              className="w-28 rounded-md border px-2 py-1.5 text-xs bg-white"
+                            />
+                            <input
+                              value={l.href}
+                              onChange={(e) => updateSectionLink(sIdx, lIdx, 'href', e.target.value)}
+                              placeholder="/path"
+                              className="flex-1 rounded-md border px-2 py-1.5 text-xs font-mono bg-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => moveSectionLink(sIdx, lIdx, -1)}
+                              disabled={lIdx === 0}
+                              className="w-6 h-6 rounded text-[#8b1a1a] hover:bg-white disabled:opacity-20 text-xs shrink-0"
+                            >
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveSectionLink(sIdx, lIdx, 1)}
+                              disabled={lIdx === sec.links.length - 1}
+                              className="w-6 h-6 rounded text-[#8b1a1a] hover:bg-white disabled:opacity-20 text-xs shrink-0"
+                            >
+                              ↓
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeSectionLink(sIdx, lIdx)}
+                              className="w-6 h-6 rounded text-red-600 hover:bg-red-50 text-xs shrink-0"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addSectionLink(sIdx)}
+                        className="mt-2 ml-2 rounded-lg border border-dashed px-3 py-1 text-xs text-[#8b1a1a] hover:bg-white"
+                      >
+                        + Add link
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={addSection}
+                  className="mt-3 w-full rounded-lg border border-dashed py-1.5 text-xs text-[#8b1a1a] hover:bg-[#faf4f4]"
+                >
+                  + Add section
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-500 pt-2">
+                For the footer menu builder (columns, social links), use{' '}
                 <Link href="/admin/footer" className="text-[#8b1a1a] hover:underline">
                   Footer settings
                 </Link>
