@@ -12,6 +12,16 @@ const actionSchema = z.object({
   description: z.string().optional(),
 })
 
+function parseMeta(notes: string | null | undefined) {
+  const out: { memberCount?: number; photoUrl?: string } = {}
+  if (!notes) return out
+  const mc = notes.match(/memberCount:(\d+)/i)
+  if (mc) out.memberCount = parseInt(mc[1], 10)
+  const ph = notes.match(/photo:(https?:\/\/\S+)/i)
+  if (ph) out.photoUrl = ph[1]
+  return out
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -27,14 +37,10 @@ export async function PATCH(
     const body = await req.json()
     const data = actionSchema.parse(body)
 
-    const submission = await prisma.submission.findUnique({
-      where: { id },
-    })
-
+    const submission = await prisma.submission.findUnique({ where: { id } })
     if (!submission) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
     }
-
     if (submission.status !== 'PENDING') {
       return NextResponse.json({ error: 'Submission already processed' }, { status: 400 })
     }
@@ -44,8 +50,6 @@ export async function PATCH(
         where: { id },
         data: { status: 'REJECTED', notes: data.notes },
       })
-
-      // Mirror reject on user_media rows with same username
       try {
         await prisma.userMedia.updateMany({
           where: { username: submission.username },
@@ -54,51 +58,45 @@ export async function PATCH(
       } catch {
         /* */
       }
-
       return NextResponse.json({ success: true, status: 'REJECTED' })
     }
 
     const title = data.title || submission.title || submission.username
     const description = data.description ?? submission.description
+    const meta = parseMeta(submission.notes)
 
     let entity = await prisma.entity.findUnique({
       where: { username: submission.username },
     })
 
+    const entityData = {
+      title,
+      description,
+      type: submission.type,
+      status: 'APPROVED' as const,
+      categoryId: data.categoryId || entity?.categoryId,
+      language: submission.language || entity?.language,
+      country: submission.country || entity?.country,
+      shortDesc: (submission as any).shortDesc || entity?.shortDesc,
+      longDesc: (submission as any).longDesc || entity?.longDesc,
+      tags: (submission as any).tags || entity?.tags,
+      isNsfw: (submission as any).isNsfw ?? entity?.isNsfw ?? false,
+      memberCount: meta.memberCount ?? entity?.memberCount ?? null,
+      photoUrl: meta.photoUrl || entity?.photoUrl || null,
+      source: 'submission',
+      lastCheckedAt: new Date(),
+    }
+
     if (entity) {
       entity = await prisma.entity.update({
         where: { id: entity.id },
-        data: {
-          title,
-          description,
-          type: submission.type,
-          status: 'APPROVED',
-          categoryId: data.categoryId || entity.categoryId,
-          language: submission.language || entity.language,
-          country: submission.country || entity.country,
-          shortDesc: (submission as any).shortDesc || entity.shortDesc,
-          longDesc: (submission as any).longDesc || entity.longDesc,
-          tags: (submission as any).tags || entity.tags,
-          isNsfw: (submission as any).isNsfw ?? entity.isNsfw,
-          source: 'submission',
-        },
+        data: entityData,
       })
     } else {
       entity = await prisma.entity.create({
         data: {
           username: submission.username,
-          title,
-          description,
-          type: submission.type,
-          status: 'APPROVED',
-          categoryId: data.categoryId,
-          language: submission.language,
-          country: submission.country,
-          shortDesc: (submission as any).shortDesc,
-          longDesc: (submission as any).longDesc,
-          tags: (submission as any).tags,
-          isNsfw: (submission as any).isNsfw ?? false,
-          source: 'submission',
+          ...entityData,
         },
       })
     }
@@ -112,7 +110,6 @@ export async function PATCH(
       },
     })
 
-    // Critical: update user dashboard media list status
     try {
       await prisma.userMedia.updateMany({
         where: { username: submission.username },

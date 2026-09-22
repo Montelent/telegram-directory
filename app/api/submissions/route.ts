@@ -18,6 +18,8 @@ const submissionSchema = z.object({
   country: z.string().max(50).optional(),
   isNsfw: z.boolean().optional(),
   wantFeature: z.boolean().optional(),
+  memberCount: z.number().int().nonnegative().optional().nullable(),
+  photoUrl: z.string().max(2000).optional().nullable(),
 })
 
 export async function POST(req: NextRequest) {
@@ -56,6 +58,15 @@ export async function POST(req: NextRequest) {
       [data.shortDesc, data.longDesc].filter(Boolean).join('\n\n') ||
       null
 
+    // Pack extra fields into notes so approve can restore them
+    const metaBits = [
+      data.notes || '',
+      data.memberCount != null ? `memberCount:${data.memberCount}` : '',
+      data.photoUrl ? `photo:${data.photoUrl}` : '',
+    ]
+      .filter(Boolean)
+      .join(' | ')
+
     const submission = await prisma.submission.create({
       data: {
         username,
@@ -70,12 +81,11 @@ export async function POST(req: NextRequest) {
         wantFeature: !!data.wantFeature,
         type: data.type as EntityType,
         status: 'PENDING',
-        notes: data.notes || null,
+        notes: metaBits || null,
         userId: userId || null,
       },
     })
 
-    // Also mirror into user_media when logged in
     if (userId) {
       try {
         await prisma.userMedia.create({
@@ -100,10 +110,7 @@ export async function POST(req: NextRequest) {
     }
     console.error('Submission error:', error)
     return NextResponse.json(
-      {
-        error:
-          'Database error. Run supabase/full_migration.sql in Supabase SQL Editor.',
-      },
+      { error: 'Database error. Ensure submissions table exists in Supabase.' },
       { status: 500 }
     )
   }
