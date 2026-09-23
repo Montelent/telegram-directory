@@ -22,7 +22,7 @@ export default function NewPageAdminPage() {
   const [content, setContent] = useState('')
   const [seo, setSeo] = useState<SeoData>({
     ...defaultSeoData,
-    schemaType: 'WebPage' as any,
+    schemaType: 'WebPage',
   })
   const [published, setPublished] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -35,6 +35,7 @@ export default function NewPageAdminPage() {
     setError('')
 
     const finalSlug = slug || slugify(title)
+    const siteUrl = typeof window !== 'undefined' ? window.location.origin : ''
     const seoJsonLd =
       seo.jsonLdOverride ??
       buildJsonLd({
@@ -42,10 +43,11 @@ export default function NewPageAdminPage() {
         title,
         slug: finalSlug,
         excerpt: seo.seoDescription || '',
-        siteUrl: typeof window !== 'undefined' ? window.location.origin : '',
-        siteName: 'Site',
+        siteUrl,
+        siteName: 'Telegram Directory',
         publishedAt: published ? new Date().toISOString() : null,
         coverImage: seo.ogImage,
+        pathPrefix: '/p',
       })
 
     const res = await fetch('/api/admin/pages', {
@@ -78,16 +80,14 @@ export default function NewPageAdminPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="flex items-center justify-between mb-6 gap-3">
-        <div>
-          <Link href="/admin/pages" className="text-xs text-slate-500 hover:underline">
-            ← Pages
-          </Link>
-          <h1 className="text-xl sm:text-2xl font-bold mt-1">New page</h1>
-        </div>
+      <Link href="/admin/pages" className="text-sm text-blue-600 hover:underline">
+        ← Pages
+      </Link>
+      <div className="flex items-center justify-between mt-2 mb-6">
+        <h1 className="text-xl font-bold">New page</h1>
         <button
           type="button"
-          onClick={() => setShowSeoMobile((v) => !v)}
+          onClick={() => setShowSeoMobile(true)}
           className="lg:hidden rounded-lg border px-3 py-1.5 text-xs font-medium"
         >
           SEO settings
@@ -148,7 +148,7 @@ export default function NewPageAdminPage() {
           </button>
         </div>
 
-        <div className={`lg:block ${showSeoMobile ? 'block' : 'hidden'}`}>
+        <div className="hidden lg:block">
           <BlogSeoPanel
             data={seo}
             onChange={setSeo}
@@ -156,9 +156,35 @@ export default function NewPageAdminPage() {
             slug={slug}
             excerpt={seo.seoDescription}
             coverImage={seo.ogImage}
+            pathPrefix="/p"
           />
         </div>
       </form>
+
+      {showSeoMobile && (
+        <div className="lg:hidden fixed inset-0 z-[70] flex justify-end">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setShowSeoMobile(false)} />
+          <div className="relative w-full sm:w-[420px] max-w-full bg-[#faf4f4] h-full overflow-y-auto shadow-xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-10">
+              <span className="font-semibold text-sm">SEO settings</span>
+              <button onClick={() => setShowSeoMobile(false)} className="p-1.5" aria-label="Close">
+                ✕
+              </button>
+            </div>
+            <div className="p-3">
+              <BlogSeoPanel
+                data={seo}
+                onChange={setSeo}
+                title={title}
+                slug={slug}
+                excerpt={seo.seoDescription}
+                coverImage={seo.ogImage}
+                pathPrefix="/p"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -17,7 +17,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const title = entity.seoTitle || entity.title
     const description =
       entity.seoDescription || entity.shortDesc || entity.description || undefined
-    return { title, description }
+    const robotsStr = entity.robots || 'index,follow'
+    const path = entityPath(entity)
+    return {
+      title,
+      description,
+      alternates: entity.canonicalUrl
+        ? { canonical: entity.canonicalUrl }
+        : { canonical: path },
+      robots: {
+        index: !robotsStr.includes('noindex'),
+        follow: !robotsStr.includes('nofollow'),
+      },
+      openGraph: {
+        title,
+        description,
+        images: entity.ogImage || entity.photoUrl ? [entity.ogImage || entity.photoUrl] : undefined,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: entity.ogImage || entity.photoUrl ? [entity.ogImage || entity.photoUrl] : undefined,
+      },
+    }
   } catch {
     return {}
   }
