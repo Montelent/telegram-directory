@@ -25,6 +25,17 @@ const submissionSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
+    const role = (session?.user as any)?.role
+    const userId = (session?.user as any)?.id as string | undefined
+
+    // Submissions require a logged-in site user (not admin session)
+    if (!session || role !== 'user' || !userId) {
+      return NextResponse.json(
+        { error: 'You must be logged in to submit media. Please log in or create an account.' },
+        { status: 401 }
+      )
+    }
+
     const body = await req.json()
     const data = submissionSchema.parse(body)
 
@@ -47,11 +58,6 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       )
     }
-
-    const userId =
-      session && (session.user as any)?.role === 'user'
-        ? ((session.user as any).id as string)
-        : undefined
 
     const description =
       data.description ||
@@ -82,25 +88,24 @@ export async function POST(req: NextRequest) {
         type: data.type as EntityType,
         status: 'PENDING',
         notes: metaBits || null,
-        userId: userId || null,
+        userId,
+        submittedBy: (session.user as any)?.email || null,
       },
     })
 
-    if (userId) {
-      try {
-        await prisma.userMedia.create({
-          data: {
-            userId,
-            username,
-            title: data.title || username,
-            type: data.type as EntityType,
-            status: 'PENDING',
-            notes: data.tags || null,
-          },
-        })
-      } catch (e) {
-        console.error('userMedia mirror failed', e)
-      }
+    try {
+      await prisma.userMedia.create({
+        data: {
+          userId,
+          username,
+          title: data.title || username,
+          type: data.type as EntityType,
+          status: 'PENDING',
+          notes: data.tags || null,
+        },
+      })
+    } catch (e) {
+      console.error('userMedia mirror failed', e)
     }
 
     return NextResponse.json({ success: true, id: submission.id }, { status: 201 })

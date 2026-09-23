@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 const TinyMCEEditor = dynamic(() => import('@/components/TinyMCEEditor'), { ssr: false })
 
@@ -26,6 +28,8 @@ function mapLang(code: string | null | undefined): string {
 }
 
 export default function SubmitPage() {
+  const { data: session, status: authStatus } = useSession()
+  const router = useRouter()
   const [link, setLink] = useState('')
   const [step, setStep] = useState<'link' | 'form' | 'done'>('link')
   const [username, setUsername] = useState('')
@@ -46,6 +50,14 @@ export default function SubmitPage() {
   const [message, setMessage] = useState('')
   const [showRules, setShowRules] = useState(false)
   const featurePrice = 20
+
+  // Require logged-in user (role user). Admins use the admin panel.
+  useEffect(() => {
+    if (authStatus === 'loading') return
+    if (!session || (session.user as any)?.role !== 'user') {
+      router.replace('/login?callbackUrl=' + encodeURIComponent('/submit'))
+    }
+  }, [session, authStatus, router])
 
   async function handleFetch() {
     if (!link.trim()) {
@@ -81,7 +93,7 @@ export default function SubmitPage() {
       setUsername(data.username)
       setTitle(data.title || data.username)
       setShortDesc(data.shortDesc || '')
-      setLongDesc(data.longDesc || data.shortDesc || '')
+      setLongDesc(data.longDesc || '')
       setPhotoUrl(data.photoUrl || null)
       setMemberCount(typeof data.memberCount === 'number' ? data.memberCount : null)
       if (data.type === 'GROUP' || data.type === 'CHANNEL') setType(data.type)
@@ -131,6 +143,10 @@ export default function SubmitPage() {
       })
       const data = await res.json()
       if (!res.ok) {
+        if (res.status === 401) {
+          router.replace('/login?callbackUrl=' + encodeURIComponent('/submit'))
+          return
+        }
         setStatus('error')
         setMessage(typeof data.error === 'string' ? data.error : 'Submission failed')
         return
@@ -141,6 +157,27 @@ export default function SubmitPage() {
       setStatus('error')
       setMessage('Network error')
     }
+  }
+
+  if (authStatus === 'loading' || !session || (session.user as any)?.role !== 'user') {
+    return (
+      <main className="min-h-screen bg-[#f0f2f5] flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-slate-600 text-sm">Checking your account…</p>
+          <p className="text-xs text-slate-400 mt-2">
+            You need to{' '}
+            <Link href="/login?callbackUrl=%2Fsubmit" className="text-blue-600 hover:underline">
+              log in
+            </Link>{' '}
+            or{' '}
+            <Link href="/signup" className="text-blue-600 hover:underline">
+              sign up
+            </Link>{' '}
+            to add media.
+          </p>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -200,7 +237,7 @@ export default function SubmitPage() {
 
         {step === 'link' && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Media's Link</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Media&apos;s Link</label>
             <input
               value={link}
               onChange={(e) => setLink(e.target.value)}
