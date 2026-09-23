@@ -57,7 +57,14 @@ CREATE TABLE IF NOT EXISTS "entities" (
   "externalId" TEXT,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "categoryId" TEXT REFERENCES "categories"("id")
+  "categoryId" TEXT REFERENCES "categories"("id"),
+  "seoTitle" TEXT,
+  "seoDescription" TEXT,
+  "seoJsonLd" TEXT,
+  "focusKeyword" TEXT,
+  "canonicalUrl" TEXT,
+  "robots" TEXT DEFAULT 'index,follow',
+  "ogImage" TEXT
 );
 
 ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "shortDesc" TEXT;
@@ -66,6 +73,13 @@ ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "tags" TEXT;
 ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "isNsfw" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "isFeatured" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "featuredUntil" TIMESTAMP(3);
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "seoTitle" TEXT;
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "seoDescription" TEXT;
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "seoJsonLd" TEXT;
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "focusKeyword" TEXT;
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "canonicalUrl" TEXT;
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "robots" TEXT DEFAULT 'index,follow';
+ALTER TABLE "entities" ADD COLUMN IF NOT EXISTS "ogImage" TEXT;
 
 CREATE INDEX IF NOT EXISTS "entities_status_idx" ON "entities"("status");
 CREATE INDEX IF NOT EXISTS "entities_type_idx" ON "entities"("type");
@@ -177,6 +191,25 @@ ALTER TABLE "blog_posts" ADD COLUMN IF NOT EXISTS "canonicalUrl" TEXT;
 ALTER TABLE "blog_posts" ADD COLUMN IF NOT EXISTS "robots" TEXT DEFAULT 'index,follow';
 CREATE INDEX IF NOT EXISTS "blog_posts_published_idx" ON "blog_posts"("published");
 
+-- CMS Pages (static pages with full on-page SEO)
+CREATE TABLE IF NOT EXISTS "pages" (
+  "id" TEXT PRIMARY KEY,
+  "title" TEXT NOT NULL,
+  "slug" TEXT NOT NULL UNIQUE,
+  "content" TEXT NOT NULL DEFAULT '',
+  "published" BOOLEAN NOT NULL DEFAULT false,
+  "seoTitle" TEXT,
+  "seoDescription" TEXT,
+  "seoJsonLd" TEXT,
+  "focusKeyword" TEXT,
+  "canonicalUrl" TEXT,
+  "robots" TEXT DEFAULT 'index,follow',
+  "ogImage" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "pages_published_idx" ON "pages"("published");
+
 -- Tickets
 CREATE TABLE IF NOT EXISTS "tickets" (
   "id" TEXT PRIMARY KEY,
@@ -243,6 +276,7 @@ ALTER TABLE "user_media" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "reviews" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "blog_categories" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "blog_posts" DISABLE ROW LEVEL SECURITY;
+ALTER TABLE "pages" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "tickets" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "deposits" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE "site_settings" DISABLE ROW LEVEL SECURITY;
