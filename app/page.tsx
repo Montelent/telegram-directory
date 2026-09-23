@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { entityPath } from '@/lib/entity-path'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,6 +57,9 @@ export default async function HomePage() {
     useFake,
     whyTitle,
     whySubtitle,
+    heroTitle,
+    heroSubtitle,
+    heroCountMode,
   ] = await Promise.all([
     getSetting('stats_views_display'),
     getSetting('stats_users_display'),
@@ -66,31 +70,55 @@ export default async function HomePage() {
     getSetting('stats_use_fake'),
     getSetting('home_why_title'),
     getSetting('home_why_subtitle'),
+    getSetting('home_hero_title'),
+    getSetting('home_hero_subtitle'),
+    getSetting('home_hero_count_mode'),
   ])
 
   const showFake = useFake === '1'
-
   const displayViews = showFake && fakeViews ? fakeViews : '—'
   const displayUsers =
     showFake && fakeUsers ? fakeUsers : userCount > 0 ? userCount.toLocaleString() : '0'
   const displayMedia =
     showFake && fakeMedia ? fakeMedia : totalApproved > 0 ? totalApproved.toLocaleString() : '0'
 
+  // Hero count: always auto from DB unless admin forces a fixed number in subtitle template
+  const autoCount = totalApproved > 0 ? totalApproved.toLocaleString() : '0'
+  const countMode = heroCountMode || 'auto' // auto | hide
+
+  // Subtitle: if admin set template with {count}, replace; else default with auto count
+  let heroSubText = heroSubtitle
+  if (heroSubText && heroSubText.includes('{count}')) {
+    heroSubText = heroSubText.replace(/\{count\}/g, autoCount)
+  } else if (!heroSubText) {
+    heroSubText =
+      countMode === 'hide'
+        ? 'Channels, groups & communities — reviewed and updated.'
+        : `More than ${autoCount} channels, groups & communities — reviewed and updated.`
+  } else if (countMode === 'auto' && !heroSubText.match(/\d/)) {
+    // Admin wrote custom text without a number — still prefix auto count line style if empty digits
+    heroSubText = heroSubText
+  }
+
   return (
-    <main className="min-h-screen bg-[#faf4f4]">
+    <main className="min-h-screen bg-[#faf4f4] overflow-x-hidden">
       <section className="relative overflow-hidden border-b border-[#f0e0e0]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#2d0808] via-[#4a0e0e] to-[#8b1a1a]" />
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_#c41e3a_0%,_transparent_50%)]" />
-        <div className="relative container mx-auto px-4 py-14 sm:py-20 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-3">
-            Discover The Best Telegram Channels
+        <div className="relative container mx-auto px-4 py-14 sm:py-20 text-center min-w-0">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-3 break-words">
+            {heroTitle || 'Discover The Best Telegram Channels'}
           </h1>
-          <p className="text-[#f0c8c8] text-base sm:text-lg max-w-2xl mx-auto mb-2">
-            More than{' '}
-            <strong className="text-white">
-              {totalApproved > 0 ? totalApproved.toLocaleString() : 'thousands of'}
-            </strong>{' '}
-            channels, groups & communities — reviewed and updated.
+          <p className="text-[#f0c8c8] text-base sm:text-lg max-w-2xl mx-auto mb-2 break-words">
+            {heroSubText.includes(autoCount) ? (
+              <>
+                {heroSubText.split(autoCount)[0]}
+                <strong className="text-white">{autoCount}</strong>
+                {heroSubText.split(autoCount).slice(1).join(autoCount)}
+              </>
+            ) : (
+              heroSubText
+            )}
           </p>
 
           <form
@@ -102,7 +130,7 @@ export default async function HomePage() {
               name="q"
               type="search"
               placeholder="Search channels, groups, @username…"
-              className="flex-1 rounded-xl border-0 px-4 py-3 text-sm text-[#1a1212] shadow-lg focus:outline-none focus:ring-2 focus:ring-[#c41e3a]"
+              className="flex-1 rounded-xl border-0 px-4 py-3 text-sm text-[#1a1212] shadow-lg focus:outline-none focus:ring-2 focus:ring-[#c41e3a] min-w-0"
             />
             <button
               type="submit"
@@ -141,7 +169,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Why add + counters (telegramchannels-style) */}
       <section className="bg-white border-b border-slate-100">
         <div className="container mx-auto px-4 py-12 sm:py-16 max-w-2xl text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#1a2332] mb-3">
@@ -190,8 +217,8 @@ export default async function HomePage() {
               <div>
                 <h3 className="font-semibold text-[#1a2332] mb-1">Get found on search engines</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">
-                  Every channel has its own page, updated regularly and indexed by search engines
-                  like Google.
+                  Every channel has its own clean URL (e.g. /channels/username), updated regularly
+                  and indexed by search engines.
                 </p>
               </div>
             </div>
@@ -200,21 +227,15 @@ export default async function HomePage() {
           <div className="space-y-6 mb-10">
             <div>
               <p className="text-4xl sm:text-5xl font-bold text-[#1a2332]">{displayViews}</p>
-              <p className="text-sm text-slate-500 mt-1">
-                {viewsLabel || 'Views per Month'}
-              </p>
+              <p className="text-sm text-slate-500 mt-1">{viewsLabel || 'Views per Month'}</p>
             </div>
             <div>
               <p className="text-4xl sm:text-5xl font-bold text-[#1a2332]">{displayUsers}</p>
-              <p className="text-sm text-slate-500 mt-1">
-                {usersLabel || 'Registered Users'}
-              </p>
+              <p className="text-sm text-slate-500 mt-1">{usersLabel || 'Registered Users'}</p>
             </div>
             <div>
               <p className="text-4xl sm:text-5xl font-bold text-[#1a2332]">{displayMedia}</p>
-              <p className="text-sm text-slate-500 mt-1">
-                {mediaLabel || 'Listed Media'}
-              </p>
+              <p className="text-sm text-slate-500 mt-1">{mediaLabel || 'Listed Media'}</p>
             </div>
           </div>
 
@@ -224,21 +245,16 @@ export default async function HomePage() {
           >
             + Add Your Media For Free
           </Link>
-
-          <p className="mt-10 text-sm text-slate-500 italic max-w-md mx-auto leading-relaxed">
-            &quot;We list channels, groups, and bots, review each listing, and update media regularly.
-            We only list active, high-quality listings that have real value for users.&quot;
-          </p>
         </div>
       </section>
 
       <section className="container mx-auto px-4 py-12">
-        <div className="flex items-end justify-between mb-6">
-          <div>
+        <div className="flex items-end justify-between mb-6 gap-2">
+          <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-widest text-[#c41e3a] mb-1">Featured</p>
             <h2 className="text-2xl font-bold text-[#2d0808]">Top channels & groups</h2>
           </div>
-          <Link href="/ranking" className="text-sm font-medium text-[#8b1a1a] hover:underline">
+          <Link href="/ranking" className="text-sm font-medium text-[#8b1a1a] hover:underline shrink-0">
             View ranking →
           </Link>
         </div>
@@ -255,8 +271,8 @@ export default async function HomePage() {
             {featured.map((entity) => (
               <Link
                 key={entity.id}
-                href={'/entity/' + entity.id}
-                className="group bg-white rounded-2xl border border-[#f0e0e0] p-4 hover:border-[#c41e3a]/40 hover:shadow-md transition flex gap-3"
+                href={entityPath(entity)}
+                className="group bg-white rounded-2xl border border-[#f0e0e0] p-4 hover:border-[#c41e3a]/40 hover:shadow-md transition flex gap-3 min-w-0 overflow-hidden"
               >
                 {entity.photoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -270,22 +286,17 @@ export default async function HomePage() {
                     {entity.type === 'CHANNEL' ? '📢' : '👥'}
                   </div>
                 )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#8b1a1a] bg-[#f8e8e8] px-1.5 py-0.5 rounded">
-                      Featured
-                    </span>
-                    <span className="text-[10px] text-[#6b5555]">{entity.type}</span>
-                  </div>
-                  <h3 className="font-semibold text-[#2d0808] mt-0.5 group-hover:text-[#8b1a1a] truncate">
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <h3 className="font-semibold text-[#2d0808] group-hover:text-[#8b1a1a] truncate">
                     {entity.title}
                   </h3>
-                  {entity.username && <p className="text-xs text-[#8b1a1a]">@{entity.username}</p>}
+                  {entity.username && (
+                    <p className="text-xs text-[#8b1a1a] truncate">@{entity.username}</p>
+                  )}
                   <div className="flex gap-2 mt-1 text-[11px] text-[#6b5555]">
                     {entity.memberCount != null && (
                       <span>{formatCount(entity.memberCount)} members</span>
                     )}
-                    {entity.category && <span>· {entity.category.name}</span>}
                   </div>
                 </div>
               </Link>
@@ -296,21 +307,16 @@ export default async function HomePage() {
 
       {categories.length > 0 && (
         <section className="container mx-auto px-4 pb-12">
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#c41e3a] mb-1">Browse</p>
-              <h2 className="text-2xl font-bold text-[#2d0808]">Categories</h2>
-            </div>
-          </div>
+          <h2 className="text-2xl font-bold text-[#2d0808] mb-6">Categories</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
                 href={'/category/' + cat.slug}
-                className="bg-white rounded-xl border border-[#f0e0e0] px-4 py-4 hover:border-[#c41e3a]/50 hover:shadow-sm transition"
+                className="bg-white rounded-xl border border-[#f0e0e0] px-4 py-4 hover:border-[#c41e3a]/50 transition min-w-0"
               >
                 <span className="text-xl">{cat.icon || '📁'}</span>
-                <p className="font-semibold text-[#2d0808] mt-1 text-sm">{cat.name}</p>
+                <p className="font-semibold text-[#2d0808] mt-1 text-sm truncate">{cat.name}</p>
                 <p className="text-[11px] text-[#6b5555]">{cat._count.entities} entries</p>
               </Link>
             ))}
@@ -320,18 +326,14 @@ export default async function HomePage() {
 
       <section className="container mx-auto px-4 pb-12">
         <div className="flex items-end justify-between mb-6">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#c41e3a] mb-1">From the blog</p>
-            <h2 className="text-2xl font-bold text-[#2d0808]">Latest articles</h2>
-          </div>
+          <h2 className="text-2xl font-bold text-[#2d0808]">Latest articles</h2>
           <Link href="/blog" className="text-sm font-medium text-[#8b1a1a] hover:underline">
             All posts →
           </Link>
         </div>
-
         {blogPosts.length === 0 ? (
           <div className="bg-white rounded-2xl border border-[#f0e0e0] p-10 text-center text-[#6b5555] text-sm">
-            No blog posts yet. Publish from Admin → Blog.
+            No blog posts yet.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -339,24 +341,16 @@ export default async function HomePage() {
               <Link
                 key={post.id}
                 href={'/blog/' + post.slug}
-                className="bg-white rounded-2xl border border-[#f0e0e0] overflow-hidden hover:border-[#c41e3a]/40 hover:shadow-md transition flex flex-col"
+                className="bg-white rounded-2xl border border-[#f0e0e0] overflow-hidden hover:shadow-md transition flex flex-col min-w-0"
               >
                 {post.coverImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={post.coverImage} alt="" className="w-full h-40 object-cover" />
                 ) : (
-                  <div className="w-full h-40 bg-gradient-to-br from-[#4a0e0e] to-[#c41e3a] opacity-90" />
+                  <div className="w-full h-40 bg-gradient-to-br from-[#4a0e0e] to-[#c41e3a]" />
                 )}
-                <div className="p-4 flex-1 flex flex-col">
-                  {post.category && (
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#c41e3a]">
-                      {post.category.name}
-                    </span>
-                  )}
-                  <h3 className="font-semibold text-[#2d0808] mt-1 line-clamp-2">{post.title}</h3>
-                  {post.excerpt && (
-                    <p className="text-sm text-[#6b5555] mt-1 line-clamp-2 flex-1">{post.excerpt}</p>
-                  )}
+                <div className="p-4">
+                  <h3 className="font-semibold text-[#2d0808] line-clamp-2">{post.title}</h3>
                 </div>
               </Link>
             ))}
@@ -367,12 +361,9 @@ export default async function HomePage() {
       <section className="border-t border-[#f0e0e0] bg-gradient-to-r from-[#2d0808] via-[#4a0e0e] to-[#8b1a1a]">
         <div className="container mx-auto px-4 py-12 text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Add your media for free</h2>
-          <p className="text-[#f0c8c8] text-sm max-w-lg mx-auto mb-6">
-            List your channel or group. Get discovered by people searching for communities like yours.
-          </p>
           <Link
             href="/submit"
-            className="inline-flex justify-center rounded-xl bg-[#c41e3a] hover:bg-[#a31830] px-6 py-3 text-sm font-semibold text-white transition"
+            className="inline-flex justify-center rounded-xl bg-[#c41e3a] hover:bg-[#a31830] px-6 py-3 text-sm font-semibold text-white transition mt-4"
           >
             Submit a channel
           </Link>
