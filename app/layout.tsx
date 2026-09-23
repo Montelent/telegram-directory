@@ -6,6 +6,7 @@ import SiteFooter from '@/components/SiteFooter'
 import ConditionalFooter from '@/components/ConditionalFooter'
 import Providers from '@/components/Providers'
 import { HeaderScripts, FooterScripts, AdSlot } from '@/components/SiteScripts'
+import TicketWidget from '@/components/TicketWidget'
 import { getSiteSettings } from '@/lib/site-settings'
 import { buildPalette, paletteToCss } from '@/lib/theme'
 import { parseTopLinks, parseDrawerSections } from '@/lib/menu'
@@ -34,8 +35,6 @@ export default async function RootLayout({
       <head>
         <HeaderScripts />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-        {/* Live brand colors from Admin → Settings → Colors. Loads after
-            globals.css so these custom-property values win without a rebuild. */}
         <style id="brand-theme" dangerouslySetInnerHTML={{ __html: themeCss }} />
       </head>
       <body
@@ -49,6 +48,7 @@ export default async function RootLayout({
             <SiteFooter />
           </ConditionalFooter>
           <FooterScripts />
+          <TicketWidget />
         </Providers>
       </body>
     </html>

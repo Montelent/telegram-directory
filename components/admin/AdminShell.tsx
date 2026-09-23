@@ -20,6 +20,7 @@ const navGroups = [
       { href: '/admin/blog', label: 'Blog', icon: '✍️' },
       { href: '/admin/pages', label: 'Pages', icon: '📄' },
       { href: '/admin/submissions', label: 'Submissions', icon: '📥' },
+      { href: '/admin/reports', label: 'Reports', icon: '⚑' },
     ],
   },
   {
@@ -27,6 +28,7 @@ const navGroups = [
     label: 'People & money',
     items: [
       { href: '/admin/users', label: 'Users', icon: '👤' },
+      { href: '/admin/tickets', label: 'Tickets', icon: '💬' },
       { href: '/admin/deposits', label: 'Deposits', icon: '💰' },
       { href: '/admin/payments', label: 'Payment methods', icon: '💳' },
     ],
@@ -39,6 +41,7 @@ const navGroups = [
       { href: '/admin/scripts', label: 'Header / Footer scripts', icon: '🧩' },
       { href: '/admin/footer', label: 'Footer menu', icon: '🦶' },
       { href: '/admin/integrations', label: 'API Integrations', icon: '🔌' },
+      { href: '/admin/email', label: 'Email & Captcha', icon: '✉️' },
       { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
     ],
   },

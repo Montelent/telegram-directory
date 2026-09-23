@@ -9,6 +9,7 @@ const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: '▦' },
   { href: '/dashboard/media', label: 'Media List', icon: '🔗' },
   { href: '/dashboard/collections', label: 'My Collections', icon: '☰' },
+  { href: '/dashboard/tickets', label: 'Support tickets', icon: '💬' },
   { href: '/dashboard/deposit', label: 'Deposit', icon: '💼' },
   { href: '/dashboard/ads', label: 'Advertising', icon: '📢' },
   { href: '/dashboard/earn', label: 'Earn/Advertise', icon: '↩' },
@@ -36,7 +37,6 @@ export default function UserDashboardShell({
   return (
     <div className="min-h-screen bg-[#eef1f6]">
       <div className="container mx-auto px-3 sm:px-4 py-4 max-w-lg">
-        {/* Show / Hide Menu — telegramchannels.me style */}
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
