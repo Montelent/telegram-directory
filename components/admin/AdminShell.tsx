@@ -18,6 +18,7 @@ const navGroups = [
       { href: '/admin/entities', label: 'Groups & Channels', icon: '📢' },
       { href: '/admin/categories', label: 'Categories', icon: '📁' },
       { href: '/admin/blog', label: 'Blog', icon: '✍️' },
+      { href: '/admin/pages', label: 'Pages', icon: '📄' },
       { href: '/admin/submissions', label: 'Submissions', icon: '📥' },
     ],
   },
@@ -66,7 +67,6 @@ export default function AdminShell({
   const activeItem = navItems.find((item) => isActive(item.href))
   const activeGroupId = navGroups.find((g) => g.items.some((i) => isActive(i.href)))?.id
 
-  // Restore persisted open-state, and always force the active group open
   useEffect(() => {
     let stored: string[] = []
     try {
@@ -76,13 +76,11 @@ export default function AdminShell({
     }
     const initial = new Set(stored)
     if (activeGroupId) initial.add(activeGroupId)
-    else navGroups.forEach((g) => initial.add(g.id)) // first load: expand all
+    else navGroups.forEach((g) => initial.add(g.id))
     setOpenGroups(initial)
     setHydrated(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Keep the section containing the current page expanded as you navigate
   useEffect(() => {
     if (!hydrated || !activeGroupId) return
     setOpenGroups((prev) => {
@@ -92,7 +90,6 @@ export default function AdminShell({
       persist(next)
       return next
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, hydrated])
 
   function persist(set: Set<string>) {
@@ -131,20 +128,11 @@ export default function AdminShell({
               }`}
             >
               {group.label}
-              <svg
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
-            <div
-              className={`grid transition-all duration-200 ease-in-out ${
-                isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
-            >
+            <div className={`grid transition-all duration-200 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
               <div className="overflow-hidden">
                 <div className="flex flex-col gap-0.5 pb-1">
                   {group.items.map((item) => (
@@ -153,9 +141,7 @@ export default function AdminShell({
                       href={item.href}
                       onClick={onNavigate}
                       className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                        isActive(item.href)
-                          ? 'bg-[#f8e8e8] text-[#8b1a1a]'
-                          : 'text-[#5c4040] hover:bg-[#faf4f4]'
+                        isActive(item.href) ? 'bg-[#f8e8e8] text-[#8b1a1a]' : 'text-[#5c4040] hover:bg-[#faf4f4]'
                       }`}
                     >
                       <span className="text-base">{item.icon}</span>
@@ -171,7 +157,6 @@ export default function AdminShell({
     </nav>
   )
 
-  // Collapsed icon-only rail for tablet widths
   const NavRail = () => (
     <nav className="flex flex-col gap-1 p-2">
       {navItems.map((item) => (
@@ -180,9 +165,7 @@ export default function AdminShell({
           href={item.href}
           title={item.label}
           className={`flex items-center justify-center rounded-lg px-3 py-2.5 text-base transition ${
-            isActive(item.href)
-              ? 'bg-[#f8e8e8] text-[#8b1a1a]'
-              : 'text-[#5c4040] hover:bg-[#faf4f4]'
+            isActive(item.href) ? 'bg-[#f8e8e8] text-[#8b1a1a]' : 'text-[#5c4040] hover:bg-[#faf4f4]'
           }`}
         >
           {item.icon}
@@ -193,75 +176,37 @@ export default function AdminShell({
 
   return (
     <div className="min-h-screen bg-[#faf4f4] flex overflow-x-hidden">
-      {/* Icon rail: tablet / medium screens */}
       <aside className="hidden md:flex lg:hidden md:flex-col md:w-16 md:fixed md:inset-y-0 border-r border-[#f0e0e0] bg-white z-30">
         <div className="h-14 flex items-center justify-center border-b border-[#f0e0e0]">
           <Link href="/admin" className="font-bold text-lg text-[#2d0808]">A</Link>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <NavRail />
-        </div>
+        <div className="flex-1 overflow-y-auto"><NavRail /></div>
         <div className="border-t border-[#f0e0e0] p-2 flex justify-center">
-          <button
-            onClick={() => signOut({ callbackUrl: '/admin/login' })}
-            className="p-2 text-[#c41e3a]"
-            title="Sign out"
-            aria-label="Sign out"
-          >
-            ⏻
-          </button>
+          <button onClick={() => signOut({ callbackUrl: '/admin/login' })} className="p-2 text-[#c41e3a]" title="Sign out" aria-label="Sign out">⏻</button>
         </div>
       </aside>
 
-      {/* Full accordion drawer: large screens, permanently docked */}
       <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 border-r border-[#f0e0e0] bg-white z-30">
         <div className="h-14 flex items-center px-5 border-b border-[#f0e0e0]">
-          <Link href="/admin" className="font-bold text-lg text-[#2d0808]">
-            Admin Panel
-          </Link>
+          <Link href="/admin" className="font-bold text-lg text-[#2d0808]">Admin Panel</Link>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <NavAccordion />
-        </div>
+        <div className="flex-1 overflow-y-auto"><NavAccordion /></div>
         <div className="border-t border-[#f0e0e0] p-4">
           <p className="text-xs text-[#6b5555] truncate mb-2">{email}</p>
-          <button
-            onClick={() => signOut({ callbackUrl: '/admin/login' })}
-            className="w-full text-left text-sm text-[#c41e3a] px-1"
-          >
-            Sign out
-          </button>
+          <button onClick={() => signOut({ callbackUrl: '/admin/login' })} className="w-full text-left text-sm text-[#c41e3a] px-1">Sign out</button>
         </div>
       </aside>
 
-      {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 inset-x-0 z-40 h-14 border-b border-[#f0e0e0] bg-white flex items-center justify-between px-4">
         <button onClick={() => setOpen(true)} className="p-2 -ml-2 text-[#4a0e0e]" aria-label="Open menu">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
-        <span className="font-bold text-[#2d0808] text-sm truncate max-w-[60%]">
-          {activeItem ? `${activeItem.icon} ${activeItem.label}` : 'Admin'}
-        </span>
+        <span className="font-bold text-[#2d0808] text-sm truncate max-w-[60%]">{activeItem ? `${activeItem.icon} ${activeItem.label}` : 'Admin'}</span>
         <div className="w-10" />
       </div>
 
-      {/* Mobile drawer overlay + accordion panel */}
-      {open && (
-        <div
-          className="md:hidden fixed inset-0 z-50 bg-black/40 transition-opacity"
-          onClick={() => setOpen(false)}
-        />
-      )}
-      <aside
-        className={`md:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white shadow-xl transition-transform duration-300 ease-in-out flex flex-col ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Admin navigation"
-      >
+      {open && <div className="md:hidden fixed inset-0 z-50 bg-black/40" onClick={() => setOpen(false)} />}
+      <aside className={`md:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white shadow-xl transition-transform duration-300 ease-in-out flex flex-col ${open ? 'translate-x-0' : '-translate-x-full'}`} role="dialog" aria-modal="true">
         <div className="h-14 flex items-center justify-between px-4 border-b border-[#f0e0e0] shrink-0">
           <span className="font-bold text-[#2d0808]">Admin Panel</span>
           <button onClick={() => setOpen(false)} className="p-2" aria-label="Close menu">✕</button>
@@ -270,12 +215,7 @@ export default function AdminShell({
           <NavAccordion onNavigate={() => setOpen(false)} />
           <div className="border-t border-[#f0e0e0] p-4 mt-2">
             <p className="text-xs text-[#6b5555] truncate mb-2">{email}</p>
-            <button
-              onClick={() => signOut({ callbackUrl: '/admin/login' })}
-              className="w-full text-left text-sm text-[#c41e3a] px-1"
-            >
-              Sign out
-            </button>
+            <button onClick={() => signOut({ callbackUrl: '/admin/login' })} className="w-full text-left text-sm text-[#c41e3a] px-1">Sign out</button>
           </div>
         </div>
       </aside>
