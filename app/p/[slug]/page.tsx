@@ -17,17 +17,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     })
     if (!page || !page.published) return {}
     const robotsStr = page.robots || 'index,follow'
+    const title = page.seoTitle || page.title
+    const description = page.seoDescription || undefined
     return {
-      title: page.seoTitle || page.title,
-      description: page.seoDescription || undefined,
+      title,
+      description,
       alternates: page.canonicalUrl ? { canonical: page.canonicalUrl } : undefined,
       robots: {
         index: !robotsStr.includes('noindex'),
         follow: !robotsStr.includes('nofollow'),
       },
       openGraph: {
-        title: page.seoTitle || page.title,
-        description: page.seoDescription || undefined,
+        title,
+        description,
+        type: 'website',
+        images: page.ogImage ? [page.ogImage] : undefined,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
         images: page.ogImage ? [page.ogImage] : undefined,
       },
     }
