@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function TicketWidget() {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
@@ -13,10 +15,7 @@ export default function TicketWidget() {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
-  // Hide on admin routes
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
-    return null
-  }
+  if (pathname?.startsWith('/admin')) return null
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -61,7 +60,7 @@ export default function TicketWidget() {
       </button>
 
       {open && (
-        <div className="fixed bottom-22 right-5 z-40 w-[min(100vw-2rem,22rem)] rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
+        <div className="fixed bottom-24 right-5 z-40 w-[min(100vw-2rem,22rem)] rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
           <div className="bg-[#8b1a1a] text-white px-4 py-3">
             <p className="font-semibold text-sm">Support</p>
             <p className="text-[11px] text-white/80">We typically reply within a day</p>

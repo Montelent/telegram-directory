@@ -239,7 +239,7 @@ model TicketMessage {
 
 model Report {
   id        String   @id @default(cuid())
-  entityId  String
+  entityId  String?
   entity    Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
   reason    String
   title     String?
