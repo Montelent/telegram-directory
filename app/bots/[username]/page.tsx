@@ -19,6 +19,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       entity.seoDescription || entity.shortDesc || entity.description || undefined
     const robotsStr = entity.robots || 'index,follow'
     const path = entityPath(entity)
+    const imageUrl: string | undefined =
+      entity.ogImage || entity.photoUrl || undefined
     return {
       title,
       description,
@@ -32,13 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title,
         description,
-        images: entity.ogImage || entity.photoUrl ? [entity.ogImage || entity.photoUrl] : undefined,
+        images: imageUrl ? [imageUrl] : undefined,
       },
       twitter: {
         card: 'summary_large_image',
         title,
         description,
-        images: entity.ogImage || entity.photoUrl ? [entity.ogImage || entity.photoUrl] : undefined,
+        images: imageUrl ? [imageUrl] : undefined,
       },
     }
   } catch {
