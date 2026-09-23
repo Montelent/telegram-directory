@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 
-type SchemaType = 'BlogPosting' | 'Article' | 'NewsArticle' | 'FAQPage'
+type SchemaType = 'BlogPosting' | 'Article' | 'NewsArticle' | 'FAQPage' | 'WebPage'
 
 interface FaqItem {
   question: string
@@ -20,7 +20,7 @@ export interface SeoData {
   authorName: string
   breadcrumbsEnabled: boolean
   faqItems: FaqItem[]
-  jsonLdOverride: string | null // set when the user edits JSON-LD by hand
+  jsonLdOverride: string | null
 }
 
 export const defaultSeoData: SeoData = {
@@ -46,20 +46,24 @@ function buildJsonLd(opts: {
   siteName: string
   publishedAt?: string | null
   coverImage?: string
+  pathPrefix?: string
 }) {
   const { data, title, slug, excerpt, siteUrl, siteName, publishedAt, coverImage } = opts
   const headline = data.seoTitle || title
   const description = data.seoDescription || excerpt || ''
-  const url = data.canonical || `${siteUrl}/blog/${slug || ''}`
+  const isPage = data.schemaType === 'WebPage'
+  const pathPrefix = opts.pathPrefix || (isPage ? '/p' : '/blog')
+  const url = data.canonical || `${siteUrl}${pathPrefix}/${slug || ''}`
   const image = data.ogImage || coverImage || undefined
 
   const graph: any[] = []
 
   const mainEntity: any = {
     '@type': data.schemaType,
-    headline,
+    ...(isPage ? { name: headline } : { headline }),
     description: description || undefined,
     image: image ? [image] : undefined,
+    url,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     keywords: data.focusKeyword || undefined,
     datePublished: publishedAt || undefined,
@@ -77,11 +81,16 @@ function buildJsonLd(opts: {
   if (data.breadcrumbsEnabled) {
     graph.push({
       '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
-        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog` },
-        { '@type': 'ListItem', position: 3, name: title || 'Post', item: url },
-      ],
+      itemListElement: isPage
+        ? [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+            { '@type': 'ListItem', position: 2, name: title || 'Page', item: url },
+          ]
+        : [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog` },
+            { '@type': 'ListItem', position: 3, name: title || 'Post', item: url },
+          ],
     })
   }
 
@@ -103,7 +112,6 @@ function buildJsonLd(opts: {
     '@graph': graph,
   }
 
-  // Strip undefined values recursively for a clean preview/payload
   return JSON.stringify(doc, (_k, v) => (v === undefined ? undefined : v), 2)
 }
 
@@ -115,6 +123,7 @@ export default function BlogSeoPanel({
   publishedAt,
   siteUrl = 'https://yoursite.com',
   siteName = 'Your Site',
+  pathPrefix,
   data,
   onChange,
 }: {
@@ -125,6 +134,7 @@ export default function BlogSeoPanel({
   publishedAt?: string | null
   siteUrl?: string
   siteName?: string
+  pathPrefix?: string
   data: SeoData
   onChange: (data: SeoData) => void
 }) {
@@ -135,6 +145,9 @@ export default function BlogSeoPanel({
   function set<K extends keyof SeoData>(key: K, value: SeoData[K]) {
     onChange({ ...data, [key]: value })
   }
+
+  const resolvedPrefix =
+    pathPrefix || (data.schemaType === 'WebPage' ? '/p' : '/blog')
 
   const autoJsonLd = useMemo(
     () =>
@@ -147,8 +160,9 @@ export default function BlogSeoPanel({
         siteName,
         publishedAt,
         coverImage,
+        pathPrefix: resolvedPrefix,
       }),
-    [data, title, slug, excerpt, siteUrl, siteName, publishedAt, coverImage]
+    [data, title, slug, excerpt, siteUrl, siteName, publishedAt, coverImage, resolvedPrefix]
   )
 
   const effectiveJsonLd = data.jsonLdOverride ?? autoJsonLd
@@ -182,8 +196,8 @@ export default function BlogSeoPanel({
 
   const checks = useMemo(() => {
     const list: { pass: boolean; label: string }[] = []
-    list.push({ pass: titleLen >= 30 && titleLen <= 60, label: 'SEO title is 30–60 characters' })
-    list.push({ pass: descLen >= 120 && descLen <= 160, label: 'Meta description is 120–160 characters' })
+    list.push({ pass: titleLen >= 30 && titleLen <= 60, label: 'SEO title is 30\u201360 characters' })
+    list.push({ pass: descLen >= 120 && descLen <= 160, label: 'Meta description is 120\u2013160 characters' })
     if (kw) {
       list.push({
         pass: (data.seoTitle || title).toLowerCase().includes(kw),
@@ -218,7 +232,6 @@ export default function BlogSeoPanel({
       </div>
 
       <div className="p-4 space-y-5 max-h-[75vh] overflow-y-auto">
-        {/* SERP preview */}
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">
             Google preview
@@ -226,13 +239,12 @@ export default function BlogSeoPanel({
           <div className="rounded-lg border bg-slate-50 p-3">
             <p className="text-blue-700 text-base leading-snug truncate">{previewTitle}</p>
             <p className="text-green-700 text-xs truncate">
-              {siteUrl.replace(/^https?:\/\//, '')}/blog/{slug || 'slug'}
+              {siteUrl.replace(/^https?:\/\//, '')}{resolvedPrefix}/{slug || 'slug'}
             </p>
             <p className="text-sm text-slate-600 mt-1 line-clamp-2">{previewDesc}</p>
           </div>
         </div>
 
-        {/* Social preview */}
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">
             Social preview
@@ -255,7 +267,6 @@ export default function BlogSeoPanel({
           </div>
         </div>
 
-        {/* Checklist */}
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">
             Checklist
@@ -264,7 +275,7 @@ export default function BlogSeoPanel({
             {checks.map((c, i) => (
               <li key={i} className="flex items-start gap-2 text-xs">
                 <span className={c.pass ? 'text-green-600' : 'text-slate-300'}>
-                  {c.pass ? '✓' : '○'}
+                  {c.pass ? '\u2713' : '\u25cb'}
                 </span>
                 <span className={c.pass ? 'text-slate-600' : 'text-slate-400'}>{c.label}</span>
               </li>
@@ -316,7 +327,7 @@ export default function BlogSeoPanel({
               value={data.ogImage}
               onChange={(e) => set('ogImage', e.target.value)}
               className="w-full mt-1 rounded-lg border px-3 py-2 text-sm"
-              placeholder="https://… (falls back to cover image)"
+              placeholder="https://\u2026 (falls back to cover image)"
             />
           </div>
 
@@ -327,7 +338,7 @@ export default function BlogSeoPanel({
                 value={data.canonical}
                 onChange={(e) => set('canonical', e.target.value)}
                 className="w-full mt-1 rounded-lg border px-3 py-2 text-sm"
-                placeholder="https://…"
+                placeholder="https://\u2026"
               />
             </div>
             <div>
@@ -346,7 +357,6 @@ export default function BlogSeoPanel({
           </div>
         </div>
 
-        {/* Schema builder */}
         <div className="border-t pt-4 space-y-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
             Schema (JSON-LD)
@@ -362,6 +372,7 @@ export default function BlogSeoPanel({
               <option value="BlogPosting">Blog Posting</option>
               <option value="Article">Article</option>
               <option value="NewsArticle">News Article</option>
+              <option value="WebPage">Web Page (static CMS pages)</option>
               <option value="FAQPage">FAQ Page (adds FAQ block below)</option>
             </select>
           </div>
@@ -435,7 +446,7 @@ export default function BlogSeoPanel({
             onClick={() => setShowAdvanced((v) => !v)}
             className="text-xs font-medium text-blue-600 flex items-center gap-1"
           >
-            {showAdvanced ? '▾' : '▸'} Advanced: edit JSON-LD manually
+            {showAdvanced ? '\u25be' : '\u25b8'} Advanced: edit JSON-LD manually
           </button>
 
           {showAdvanced && (
@@ -450,7 +461,7 @@ export default function BlogSeoPanel({
               {jsonLdError && <p className="text-xs text-red-600">{jsonLdError}</p>}
               {data.jsonLdOverride && (
                 <p className="text-[11px] text-amber-600">
-                  Manual override active — auto-generated fields above are ignored on save.
+                  Manual override active \u2014 auto-generated fields above are ignored on save.
                 </p>
               )}
               <div className="flex gap-2">
