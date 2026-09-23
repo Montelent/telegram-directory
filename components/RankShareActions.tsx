@@ -10,6 +10,7 @@ export default function RankShareActions({
   memberCount,
   type,
   globalRank,
+  publicPath,
 }: {
   entityId: string
   title: string
@@ -17,12 +18,14 @@ export default function RankShareActions({
   memberCount?: number | null
   type?: string
   globalRank?: number | null
+  publicPath?: string
 }) {
   const [status, setStatus] = useState('')
 
   function pageUrl() {
-    if (typeof window === 'undefined') return '/entity/' + entityId
-    return window.location.origin + '/entity/' + entityId
+    const path = publicPath || '/entity/' + entityId
+    if (typeof window === 'undefined') return path
+    return window.location.origin + path
   }
 
   function formatCount(n: number | null | undefined) {
@@ -46,7 +49,6 @@ export default function RankShareActions({
         return
       }
 
-      // Background
       const grad = ctx.createLinearGradient(0, 0, w, h)
       grad.addColorStop(0, '#1a2332')
       grad.addColorStop(0.55, '#2d0808')
@@ -54,24 +56,20 @@ export default function RankShareActions({
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, w, h)
 
-      // Soft glow
       const g2 = ctx.createRadialGradient(w * 0.8, 0, 0, w * 0.8, 0, w * 0.7)
       g2.addColorStop(0, 'rgba(196,30,58,0.35)')
       g2.addColorStop(1, 'transparent')
       ctx.fillStyle = g2
       ctx.fillRect(0, 0, w, h)
 
-      // Card panel
       ctx.fillStyle = 'rgba(255,255,255,0.96)'
       roundRect(ctx, 60, 120, w - 120, h - 280, 40)
       ctx.fill()
 
-      // Brand
       ctx.fillStyle = '#ffffff'
       ctx.font = 'bold 36px system-ui, sans-serif'
       ctx.fillText('Telegram Directory', 60, 80)
 
-      // Type badge
       ctx.fillStyle = '#f1f5f9'
       roundRect(ctx, 100, 170, 160, 48, 12)
       ctx.fill()
@@ -79,7 +77,6 @@ export default function RankShareActions({
       ctx.font = 'bold 22px system-ui, sans-serif'
       ctx.fillText((type || 'CHANNEL').toUpperCase(), 118, 202)
 
-      // Title
       ctx.fillStyle = '#0f172a'
       ctx.font = 'bold 52px system-ui, sans-serif'
       const titleLines = wrapText(ctx, title, w - 220)
@@ -89,7 +86,6 @@ export default function RankShareActions({
         y += 62
       }
 
-      // Username
       if (username) {
         ctx.fillStyle = '#0088cc'
         ctx.font = '600 32px system-ui, sans-serif'
@@ -99,7 +95,6 @@ export default function RankShareActions({
         y += 30
       }
 
-      // Stats boxes
       const boxY = y + 40
       const boxW = (w - 260) / 2
       ctx.fillStyle = '#f8fafc'
@@ -122,7 +117,6 @@ export default function RankShareActions({
         boxY + 105
       )
 
-      // Site link box
       const linkY = boxY + 180
       ctx.fillStyle = '#1a2332'
       roundRect(ctx, 100, linkY, w - 200, 100, 20)
@@ -136,7 +130,6 @@ export default function RankShareActions({
       const shortUrl = url.length > 42 ? url.slice(0, 40) + '…' : url
       ctx.fillText(shortUrl, 130, linkY + 75)
 
-      // Footer on dark
       ctx.fillStyle = 'rgba(255,255,255,0.7)'
       ctx.font = '22px system-ui, sans-serif'
       ctx.fillText('Share · Discover · Grow', 60, h - 50)
