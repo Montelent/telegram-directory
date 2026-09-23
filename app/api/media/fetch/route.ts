@@ -15,10 +15,10 @@ function parseUsername(raw: string): string | null {
 
 function decodeHtml(s: string) {
   return s
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&#x27;/g, "'")
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
@@ -53,7 +53,6 @@ function buildShortDesc(raw: string | null, max = 170): string {
 }
 
 function parseMemberCount(html: string): number | null {
-  // Telegram public pages: <div class="tgme_page_extra">1 234 subscribers</div>
   const patterns = [
     /tgme_page_extra[^>]*>([^<]+)</i,
     /([\d\s\u00a0,.]+)\s*(subscribers|members|subscribers?)/i,
@@ -106,7 +105,6 @@ export async function POST(req: NextRequest) {
     let source = 't.me'
     let warning: string | undefined
 
-    // 1) Prefer telegramchannels.me API when key is configured (subscribers + language)
     const apiKey = await getApiKey()
     if (apiKey) {
       try {
@@ -114,8 +112,9 @@ export async function POST(req: NextRequest) {
         if (result.ok) {
           const d = result.data
           title = d.title || username
-          longDesc = d.description || ''
-          shortDesc = buildShortDesc(longDesc, 170)
+          // Only short description from API; leave longDesc empty for admin/user to fill
+          shortDesc = buildShortDesc(d.description || '', 170)
+          longDesc = ''
           photoUrl = d.photo_url || null
           memberCount = d.subscribers ?? null
           language = d.language || null
@@ -135,7 +134,6 @@ export async function POST(req: NextRequest) {
         'No telegramchannels API key — subscribers may be incomplete. Add key in Admin → API Integrations (name: telegramchannels).'
     }
 
-    // 2) Always enrich / fill gaps from public t.me page
     try {
       const res = await fetch(url, {
         headers: {
@@ -154,14 +152,16 @@ export async function POST(req: NextRequest) {
               username
           )
         }
-        if (!longDesc) {
-          longDesc =
+        // Only populate shortDesc from t.me meta; never copy into longDesc
+        if (!shortDesc) {
+          const scraped =
             metaContent(html, 'og:description') ||
             metaContent(html, 'twitter:description') ||
             metaContent(html, 'description') ||
             ''
-          shortDesc = buildShortDesc(longDesc, 170)
+          shortDesc = buildShortDesc(scraped, 170)
         }
+        // longDesc stays empty unless admin fills it later
         if (!photoUrl) {
           photoUrl =
             metaContent(html, 'og:image') || metaContent(html, 'twitter:image') || null
@@ -180,7 +180,6 @@ export async function POST(req: NextRequest) {
       console.error('t.me scrape', e)
     }
 
-    // Country is not on t.me / simple API — leave for user or admin
     return NextResponse.json({
       username,
       title: title.slice(0, 120),
