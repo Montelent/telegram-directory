@@ -66,8 +66,8 @@ model Entity {
   submissions   Submission[]
   reviews       Review[]
   userMedia     UserMedia[]
+  reports       Report[]
 
-  // SEO
   seoTitle       String?
   seoDescription String?
   seoJsonLd      String?
@@ -110,19 +110,20 @@ model Submission {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String?
-  password     String
-  balanceCents Int      @default(0)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  reviews      Review[]
-  submissions  Submission[]
-  media        UserMedia[]
-  tickets      Ticket[]
-  deposits     Deposit[]
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  password      String
+  balanceCents  Int      @default(0)
+  isActive      Boolean  @default(true)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  reviews       Review[]
+  submissions   Submission[]
+  media         UserMedia[]
+  tickets       Ticket[]
+  deposits      Deposit[]
   @@map("users")
 }
 
@@ -211,16 +212,44 @@ model Page {
 }
 
 model Ticket {
-  id        String       @id @default(cuid())
+  id        String          @id @default(cuid())
   subject   String
   message   String
-  status    TicketStatus @default(OPEN)
+  status    TicketStatus    @default(OPEN)
   adminNote String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
   userId    String?
-  user      User?        @relation(fields: [userId], references: [id])
+  user      User?           @relation(fields: [userId], references: [id])
+  messages  TicketMessage[]
   @@map("tickets")
+}
+
+model TicketMessage {
+  id         String   @id @default(cuid())
+  ticketId   String
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  body       String
+  isAdmin    Boolean  @default(false)
+  authorName String?
+  createdAt  DateTime @default(now())
+  @@index([ticketId])
+  @@map("ticket_messages")
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  entityId  String
+  entity    Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  reason    String
+  title     String?
+  status    String   @default("open")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status])
+  @@index([entityId])
+  @@map("reports")
 }
 
 model Deposit {
